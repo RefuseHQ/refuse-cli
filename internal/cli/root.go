@@ -27,7 +27,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(newInstallCmd())
 	root.AddCommand(newUninstallCmd())
 	root.AddCommand(newHookCmd())
-	root.AddCommand(newGateCmd())
+	root.AddCommand(realGateCmd())
 	root.AddCommand(newInitCmd())
 	root.AddCommand(newDoctorCmd())
 

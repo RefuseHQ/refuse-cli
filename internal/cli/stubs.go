@@ -134,17 +134,6 @@ func newHookCmd() *cobra.Command {
 	return cmd
 }
 
-func newGateCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "gate",
-		Short: "Decision engine called by shims and agent hooks (stdin protocol)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "gate: not implemented yet")
-			return nil
-		},
-	}
-}
-
 func newInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
