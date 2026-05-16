@@ -20,16 +20,16 @@ func NewRoot() *cobra.Command {
 
 	// Subcommands — implemented in sibling files of this package as they
 	// land. Each module exposes a New<Cmd>() *cobra.Command builder.
-	root.AddCommand(newStatusCmd())
-	root.AddCommand(newCheckCmd())
-	root.AddCommand(newCheckLockfileCmd())
-	root.AddCommand(newConfigCmd())
-	root.AddCommand(newInstallCmd())
-	root.AddCommand(newUninstallCmd())
-	root.AddCommand(newHookCmd())
+	root.AddCommand(realStatusCmd())
+	root.AddCommand(realCheckCmd())
+	root.AddCommand(realCheckLockfileCmd())
+	root.AddCommand(realConfigCmd())
+	root.AddCommand(realInstallCmd())
+	root.AddCommand(realUninstallCmd())
+	root.AddCommand(realHookCmd())
 	root.AddCommand(realGateCmd())
-	root.AddCommand(newInitCmd())
-	root.AddCommand(newDoctorCmd())
+	root.AddCommand(realInitCmd())
+	root.AddCommand(realDoctorCmd())
 
 	return root
 }

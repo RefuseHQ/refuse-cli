@@ -29,10 +29,8 @@ var KnownManagers = map[string]string{
 }
 
 // Run is the shim entry point — vet the call, then exec the real binary.
-// For v1 it just execs through; the gate is wired up in the gate task.
+// On a block exits 2 with a stderr explanation; on allow it exec's the real
+// manager so the parent shell sees its exit code directly.
 func Run(name string, args []string) int {
-	// TODO: parse args, call refuse gate, block on vulnerable.
-	// For v1 scaffold: execute the real binary directly so nothing breaks
-	// while the gate is being implemented.
-	return execReal(name, args)
+	return runFromArgv(name, args)
 }
