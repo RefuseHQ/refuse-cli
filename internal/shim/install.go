@@ -15,10 +15,10 @@ var DefaultShims = []string{"npm", "pnpm", "yarn", "bun", "pip", "pip3"}
 
 // InstallResult is the structured summary `refuse install` reports back.
 type InstallResult struct {
-	BinDir     string
-	Installed  []string
-	Skipped    []string
-	ShellRC    []string // shell rc files we edited
+	BinDir    string
+	Installed []string
+	Skipped   []string
+	ShellRC   []string // shell rc files we edited
 }
 
 // Install drops symlinks for each shim into ~/.refuse/bin (creating the dir

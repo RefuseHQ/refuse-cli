@@ -6,11 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/cobra"
+
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/gate"
 	"github.com/RefuseHQ/refuse-cli/internal/parsers"
 	"github.com/RefuseHQ/refuse-cli/internal/server"
-	"github.com/spf13/cobra"
 )
 
 // gateCmd is wired up by root.go's newGateCmd stub once we delete that

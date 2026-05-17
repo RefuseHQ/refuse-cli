@@ -28,7 +28,7 @@ builds:
       - arm64
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- .Os }}_
@@ -36,7 +36,7 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: "checksums.txt"
@@ -65,7 +65,7 @@ sboms:
   - artifacts: archive
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -81,12 +81,9 @@ release:
     name: refuse-cli
   draft: true
 
-brews:
+homebrew_casks:
   - repository:
       owner: RefuseHQ
       name: homebrew-tap
     homepage: https://github.com/RefuseHQ/refuse-cli
     description: PATH shim for npm / pip / cargo / yarn / pnpm / gem / bun / go — refuses to install packages with known CVEs
-    license: Apache-2.0
-    test: |
-      system "#{bin}/refuse", "--version"

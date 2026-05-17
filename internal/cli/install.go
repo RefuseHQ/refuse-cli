@@ -3,8 +3,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/RefuseHQ/refuse-cli/internal/shim"
 	"github.com/spf13/cobra"
+
+	"github.com/RefuseHQ/refuse-cli/internal/shim"
 )
 
 func realInstallCmd() *cobra.Command {

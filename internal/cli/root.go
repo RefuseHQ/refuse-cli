@@ -2,8 +2,9 @@
 package cli
 
 import (
-	"github.com/RefuseHQ/refuse-cli/internal/version"
 	"github.com/spf13/cobra"
+
+	"github.com/RefuseHQ/refuse-cli/internal/version"
 )
 
 // NewRoot returns the root cobra command with all subcommands attached.

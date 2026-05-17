@@ -28,10 +28,10 @@ const (
 // Result is the structured verdict + the rendered human message.
 type Result struct {
 	Decision     Decision
-	Message      string                            // human-readable block reason, empty on allow
-	Findings     []server.CheckPackageResponse     // per-package result for direct mode
-	BatchSummary *server.BatchSummary              // populated for batch / lockfile
-	ServerError  error                             // non-nil if the server call failed (fail-open path)
+	Message      string                        // human-readable block reason, empty on allow
+	Findings     []server.CheckPackageResponse // per-package result for direct mode
+	BatchSummary *server.BatchSummary          // populated for batch / lockfile
+	ServerError  error                         // non-nil if the server call failed (fail-open path)
 }
 
 // Engine carries the deps the gate needs.
@@ -82,7 +82,7 @@ func (e Engine) Decide(ctx context.Context, p parsers.ParseResult) Result {
 	if worst >= threshold && worst > 0 {
 		return Result{
 			Decision:     DecisionBlock,
-			Message:      renderBlock(p, resp),
+			Message:      renderBlock(resp),
 			Findings:     resp.Results,
 			BatchSummary: &resp.Summary,
 		}
@@ -113,7 +113,7 @@ func (e Engine) failOpenOrClosed(err error) Result {
 	}
 }
 
-func renderBlock(p parsers.ParseResult, resp server.BatchCheckResponse) string {
+func renderBlock(resp server.BatchCheckResponse) string {
 	var b strings.Builder
 	b.WriteString("refuse: blocked — vulnerable package(s)\n")
 	for _, r := range resp.Results {

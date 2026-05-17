@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/hook"
-	"github.com/spf13/cobra"
 )
 
 func realDoctorCmd() *cobra.Command {

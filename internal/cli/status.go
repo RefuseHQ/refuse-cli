@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/hook"
 	"github.com/RefuseHQ/refuse-cli/internal/shim"
-	"github.com/spf13/cobra"
 )
 
 func realStatusCmd() *cobra.Command {

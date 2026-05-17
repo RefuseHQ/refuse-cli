@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/RefuseHQ/refuse-cli/internal/hook"
 	"github.com/spf13/cobra"
+
+	"github.com/RefuseHQ/refuse-cli/internal/hook"
 )
 
 func realHookCmd() *cobra.Command {

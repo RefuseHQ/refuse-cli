@@ -13,11 +13,11 @@ import (
 // Status reports whether the adapter found its config file + whether a refuse
 // hook is currently installed.
 type Status struct {
-	Agent     string
-	Found     bool
+	Agent      string
+	Found      bool
 	ConfigPath string
-	Installed bool
-	Detail    string
+	Installed  bool
+	Detail     string
 }
 
 // Adapter is implemented by each agent's hook installer.
