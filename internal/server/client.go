@@ -74,7 +74,7 @@ func (c *Client) post(ctx context.Context, path string, in any, out any) error {
 	}
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
-		return fmt.Errorf("%w: %v", ErrServerUnreachable, err)
+		return fmt.Errorf("%w: %w", ErrServerUnreachable, err)
 	}
 	defer resp.Body.Close()
 

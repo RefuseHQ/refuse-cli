@@ -1,6 +1,7 @@
 package shim
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -59,7 +60,8 @@ func execReal(name string, args []string) int {
 		cmd := exec.Command(bin, args...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
 				return exitErr.ExitCode()
 			}
 			fmt.Fprintln(os.Stderr, "refuse:", err.Error())
