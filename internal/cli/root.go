@@ -11,7 +11,7 @@ func NewRoot() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "refuse",
 		Short:         "Gate AI coding agents from installing vulnerable packages",
-		Long:          "refuse wraps your package managers and installs deterministic hooks into coding\nagents so vulnerable packages get blocked at install time. See https://refuse.dev.",
+		Long:          "refuse wraps your package managers (npm, pip, cargo, yarn, pnpm, gem,\nbun, go) and refuses to install packages with known CVEs. Works on a\nlaptop, in CI, and inside Docker build stages.",
 		Version:       version.Version + " (commit " + version.Commit + ", " + version.Date + ")",
 		SilenceUsage:  true,
 		SilenceErrors: false,

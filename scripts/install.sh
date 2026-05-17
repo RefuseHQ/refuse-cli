@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Install the refuse CLI from the latest GitHub release.
 #
-# Usage:  curl -sSL https://refuse.dev/install.sh | sh
+# Usage:  curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
 #
 # Honours $REFUSE_INSTALL_DIR (default ~/.refuse/bin) and $REFUSE_VERSION
 # (default latest). Verifies a sha256 checksum from the release.

@@ -1,6 +1,10 @@
 # refuse-cli
 
-`refuse` is the CLI for [refuse.dev](https://refuse.dev) — it wraps your package managers and installs deterministic pre-tool-use hooks into coding agents so vulnerable packages get blocked at install time.
+> Wraps `npm`, `pip`, `cargo`, `yarn`, `pnpm`, `gem`, `bun`, and `go` as a PATH shim — refuses to install packages with known CVEs.
+
+`refuse` sits in front of your package managers. Each `install` call is vetted against the [`refuse`](https://github.com/RefuseHQ/refuse) server (self-hosted or hosted) before the real binary runs; if the package has a known advisory above your severity threshold, the install is blocked with the CVE and a suggested safe version.
+
+Works on a developer's laptop, in a CI job, or inside a Docker build stage. Optional integration with coding-agent pre-tool-use hooks (Claude Code today, more soon) so an agent's autonomous installs hit the same gate.
 
 ## Install
 
@@ -13,7 +17,7 @@ brew install refusehq/tap/refuse
 Direct binary:
 
 ```sh
-curl -sSL https://refuse.dev/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
 ```
 
 Or from source:

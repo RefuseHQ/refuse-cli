@@ -62,8 +62,8 @@ brews:
   - repository:
       owner: RefuseHQ
       name: homebrew-tap
-    homepage: https://refuse.dev
-    description: Gate AI coding agents from installing vulnerable packages
+    homepage: https://github.com/RefuseHQ/refuse-cli
+    description: PATH shim for npm / pip / cargo / yarn / pnpm / gem / bun / go — refuses to install packages with known CVEs
     license: Apache-2.0
     test: |
       system "#{bin}/refuse", "--version"
