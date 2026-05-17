@@ -1,40 +1,120 @@
+<div align="center">
+
 # refuse-cli
 
-> Wraps `npm`, `pip`, `cargo`, `yarn`, `pnpm`, `gem`, `bun`, and `go` as a PATH shim — refuses to install packages with known CVEs.
+**Wraps `npm`, `pip`, `cargo`, `yarn`, `pnpm`, `gem`, `bun`, and `go` as a PATH shim — refuses to install packages with known CVEs.**
 
-`refuse` sits in front of your package managers. Each `install` call is vetted against the [`refuse`](https://github.com/RefuseHQ/refuse) server (self-hosted or hosted) before the real binary runs; if the package has a known advisory above your severity threshold, the install is blocked with the CVE and a suggested safe version.
+[![CI](https://github.com/RefuseHQ/refuse-cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/RefuseHQ/refuse-cli/actions/workflows/ci.yaml)
+[![Lint](https://github.com/RefuseHQ/refuse-cli/actions/workflows/lint.yaml/badge.svg)](https://github.com/RefuseHQ/refuse-cli/actions/workflows/lint.yaml)
+[![CodeQL](https://github.com/RefuseHQ/refuse-cli/actions/workflows/codeql.yml/badge.svg)](https://github.com/RefuseHQ/refuse-cli/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/RefuseHQ/refuse-cli?display_name=tag&sort=semver)](https://github.com/RefuseHQ/refuse-cli/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/RefuseHQ/refuse-cli.svg)](https://pkg.go.dev/github.com/RefuseHQ/refuse-cli)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Works on a developer's laptop, in a CI job, or inside a Docker build stage. Optional integration with coding-agent pre-tool-use hooks (Claude Code today, more soon) so an agent's autonomous installs hit the same gate.
+</div>
+
+```sh
+$ npm install lodash@4.17.10
+refuse: blocked — CVE-2019-10744 (high)
+        Prototype pollution in lodash <= 4.17.11
+        suggested safe version: 4.17.21
+```
+
+`refuse` sits in front of your package managers. Every `install` call is vetted against a [`refuse`](https://github.com/RefuseHQ/refuse) server (self-hosted) or [refuse.dev](https://refuse.dev) (hosted) before the real binary runs. If the package has a known advisory above your severity threshold, the install is blocked with the CVE and a suggested safe version.
+
+Works:
+
+- On a developer's laptop.
+- In a CI runner.
+- Inside a Docker build stage.
+- As a [Claude Code](https://www.anthropic.com/claude-code) PreToolUse hook — same gate for autonomous agent installs.
+
+---
 
 ## Install
 
-Homebrew:
+**Homebrew** (macOS / Linux):
 
 ```sh
 brew install refusehq/tap/refuse
 ```
 
-Direct binary:
+**Direct binary** (any Unix, with sha256 checksum verification):
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
 ```
 
-Or from source:
+**From source**:
 
 ```sh
 go install github.com/RefuseHQ/refuse-cli/cmd/refuse@latest
 ```
 
+Verified releases are [cosign-signed](https://github.com/sigstore/cosign) with SLSA build provenance — see [SECURITY.md](./SECURITY.md) for the verification command.
+
 ## Quickstart
 
 ```sh
 refuse init                       # interactive: server URL + API key
-refuse install                    # drop shims into ~/.refuse/bin + update PATH
+refuse install                    # writes shims to ~/.refuse/bin + updates PATH
 refuse hook install claude-code   # PreToolUse hook in ~/.claude/settings.json
 ```
 
-Now when Claude Code (or you) runs `npm install lodash@4.17.10`, the shim consults the refuse server, blocks the install, and reports the CVE.
+Then run anything you'd normally run:
+
+```sh
+npm install express
+pip install requests
+cargo add tokio
+```
+
+If the install is clean, it goes through. If it isn't, refuse blocks it and tells you why.
+
+## How it works
+
+```mermaid
+flowchart LR
+    USER[Developer] -->|"npm install …"| SHIM[refuse-cli<br/>aliased as 'npm']
+    AGENT[Coding agent] -->|PreToolUse hook| GATE[refuse gate]
+    SHIM --> PARSE[parser]
+    GATE --> PARSE
+    PARSE -->|"(eco, name, ver)"| DECIDE[decide]
+    DECIDE -->|HTTP| SERVER[(refuse server)]
+    SERVER -->|verdict| DECIDE
+    DECIDE -->|allow| REAL[real binary]
+    DECIDE -->|block exit 2| FAIL[stderr]
+```
+
+A single Go binary, symlinked into `~/.refuse/bin/` under each manager's name. When `npm` is invoked, the shim parses the argv, asks the server, and either `exec`s the real `npm` on PATH or exits with code 2 and a message.
+
+For details, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## Supported package managers
+
+| Manager | Ecosystem | Install verbs | Lockfile parsing |
+| --- | --- | --- | --- |
+| `npm` | npm | `install`, `i`, `add` | `package-lock.json` |
+| `pnpm` | npm | `install`, `add` | `pnpm-lock.yaml` |
+| `yarn` (classic + Berry) | npm | `add`, `install` | `yarn.lock` |
+| `bun` | npm | `install`, `add` | `bun.lockb` / `bun.lock` |
+| `pip` / `pip3` | PyPI | `install`, `install -r` | `requirements.txt` |
+| `cargo` | crates.io | `add`, `install` | `Cargo.lock` |
+| `gem` | RubyGems | `install` | `Gemfile.lock` |
+| `go` | Go modules | `get`, `install` | `go.sum` |
+
+## Supported agent hooks
+
+| Agent | Status |
+| --- | --- |
+| Claude Code | ✓ supported |
+| Cursor | tracked in [#?](https://github.com/RefuseHQ/refuse-cli/issues) |
+| Continue | tracked |
+| Aider | tracked |
+| Codex CLI | tracked |
+| Cline | tracked |
+
+PRs welcome — see [`internal/hook/claudecode.go`](./internal/hook/claudecode.go) as the reference.
 
 ## Commands
 
@@ -53,18 +133,83 @@ Now when Claude Code (or you) runs `npm install lodash@4.17.10`, the shim consul
 | `refuse status` | Diagnose install state |
 | `refuse doctor` | Verify PATH / hooks / server reachability |
 
-## Pointing at a self-hosted server
+## Configuration
+
+`refuse config set <key> <value>`, or edit `~/.refuse/config.yaml` directly:
+
+```yaml
+server_url: http://localhost:8080        # or https://mcp.refuse.dev
+api_key: rfs_...                         # optional, required for hosted
+policy:
+  severity_threshold: high               # low | medium | high | critical
+  fail_closed: false                     # true = block if server unreachable (default false → fail open with stderr warning)
+  allow_yanked: false                    # allow yanked versions when no advisory matches
+  allow_prerelease: false                # allow prerelease versions
+  override_env: REFUSE_ALLOW_VULNERABLE  # env var that forces a block to pass through
+```
+
+Environment variables override the file (useful in CI):
+
+- `REFUSE_SERVER_URL`
+- `REFUSE_API_KEY`
+- `REFUSE_POLICY` — sets `severity_threshold`
+- `REFUSE_FAIL_CLOSED` — `1`/`true` to enable
+- `REFUSE_ALLOW_VULNERABLE` — `1`/`true` to bypass a single install
+
+## Pointing at a server
+
+**Hosted ([refuse.dev](https://refuse.dev))**:
 
 ```sh
+refuse config set server_url https://mcp.refuse.dev
+refuse config set api_key rfs_...
+```
+
+**Self-hosted ([RefuseHQ/refuse](https://github.com/RefuseHQ/refuse))**:
+
+```sh
+docker run --rm -p 8080:8080 ghcr.io/refusehq/refuse:latest
 refuse config set server_url http://localhost:8080
 ```
 
-The companion self-hostable server lives at [RefuseHQ/refuse](https://github.com/RefuseHQ/refuse) — `docker run --rm -p 8080:8080 ghcr.io/refusehq/refuse:latest` and you're up.
+## In CI
+
+```yaml
+# .github/workflows/ci.yaml
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    env:
+      REFUSE_SERVER_URL: https://mcp.refuse.dev
+      REFUSE_API_KEY: ${{ secrets.REFUSE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install refuse
+        run: curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
+      - run: $HOME/.refuse/bin/refuse check-lockfile package-lock.json   # exits 2 on a vulnerable hit
+      - run: npm ci
+```
+
+## How it relates to the other refuse projects
+
+| | What it is | When to use it |
+| --- | --- | --- |
+| **[refuse-cli](https://github.com/RefuseHQ/refuse-cli)** (this) | PATH shim in front of package managers | You want to block installs before they happen, on a laptop / CI / Docker build |
+| **[refuse](https://github.com/RefuseHQ/refuse)** | Self-hostable HTTP server | You want to run your own backend |
+| **[refuse.dev](https://refuse.dev)** | Hosted service | You don't want to run anything; sign up and point the CLI at it |
 
 ## Status
 
-This is an alpha release — the scaffolding is in place, but most subcommands are still stubs (`refuse <cmd>` prints "not implemented yet"). See open issues for the v0.1.0 plan.
+Alpha. The gate is production-ready; some convenience subcommands are still being filled in. See [ROADMAP.md](./ROADMAP.md) and open issues for the path to 0.1.0.
 
-## Licence
+## Contributing
 
-Apache-2.0 — see [LICENSE](LICENSE).
+PRs welcome — particularly for new package managers, agent hooks, and platforms. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Security
+
+Security policy: [SECURITY.md](./SECURITY.md). Report privately via [hello@refuse.dev](mailto:hello@refuse.dev).
+
+## License
+
+[Apache License 2.0](./LICENSE) © RefuseHQ.

@@ -1,0 +1,92 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "[bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please search [existing issues](https://github.com/RefuseHQ/refuse-cli/issues?q=is%3Aissue) first.
+
+        **Security issue?** Don't file it here — see [SECURITY.md](https://github.com/RefuseHQ/refuse-cli/blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact command you ran and what you saw.
+      placeholder: |
+        I ran `npm install lodash@4.17.10` and ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: refuse-cli version
+      description: Output of `refuse --version`.
+      placeholder: "v0.0.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (x86_64)
+        - Linux (arm64)
+        - Windows (x86_64)
+        - Windows (arm64)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: manager
+    attributes:
+      label: Package manager
+      description: Which manager is being wrapped? (npm, pnpm, yarn, pip, cargo, etc.) Include its version.
+      placeholder: "npm 10.2.0"
+    validations:
+      required: true
+  - type: input
+    id: install-method
+    attributes:
+      label: How did you install refuse?
+      placeholder: "brew | install.sh | go install | from source"
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`refuse doctor` output"
+      description: Paste the full output. This catches most environment issues.
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Any other output. Redact secrets.
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/RefuseHQ/refuse-cli/blob/main/CODE_OF_CONDUCT.md).
+          required: true

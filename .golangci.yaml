@@ -1,0 +1,56 @@
+# golangci-lint config — https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  go: "1.21"
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    # built-in / default
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # extras worth having
+    - bodyclose
+    - errname
+    - errorlint
+    - exhaustive
+    - gocritic
+    - gofmt
+    - goimports
+    - misspell
+    - nakedret
+    - nolintlint
+    - revive
+    - unconvert
+    - unparam
+    - whitespace
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/RefuseHQ/refuse-cli
+  revive:
+    rules:
+      - name: package-comments
+        disabled: true
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam
+  max-issues-per-linter: 0
+  max-same-issues: 0
