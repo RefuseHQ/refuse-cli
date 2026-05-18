@@ -53,6 +53,16 @@ go install github.com/RefuseHQ/refuse-cli/cmd/refuse@latest
 
 Verified releases are [cosign-signed](https://github.com/sigstore/cosign) with SLSA build provenance — see [SECURITY.md](./SECURITY.md) for the verification command.
 
+**Platforms.** Pre-built binaries are published for:
+
+| OS | Architectures |
+| --- | --- |
+| macOS | x86_64, arm64 |
+| Linux | x86_64, arm64, i386, armv6, armv7 |
+| Windows | x86_64, arm64, i386 |
+
+Other platforms can `go install` from source.
+
 ## Quickstart
 
 ```sh

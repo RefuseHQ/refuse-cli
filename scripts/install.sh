@@ -25,6 +25,9 @@ uname_arch() {
   case "$(uname -m)" in
     x86_64|amd64) echo x86_64;;
     arm64|aarch64) echo arm64;;
+    i386|i686) echo i386;;
+    armv7l|armv7) echo armv7;;
+    armv6l|armv6) echo armv6;;
     *) echo "unsupported arch: $(uname -m)" >&2; exit 1;;
   esac
 }

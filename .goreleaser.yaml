@@ -26,6 +26,20 @@ builds:
     goarch:
       - amd64
       - arm64
+      - "386"
+      - arm
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      # darwin only ships on amd64 + arm64 today.
+      - goos: darwin
+        goarch: "386"
+      - goos: darwin
+        goarch: arm
+      # 32-bit ARM windows is not a supported Go target.
+      - goos: windows
+        goarch: arm
 
 archives:
   - formats: [tar.gz]
@@ -33,6 +47,8 @@ archives:
       {{ .ProjectName }}_
       {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else if eq .Arch "arm" }}armv{{ .Arm }}
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
