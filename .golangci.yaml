@@ -1,4 +1,14 @@
-# golangci-lint config — https://golangci-lint.run/usage/configuration/
+# golangci-lint v2 config — https://golangci-lint.run/usage/configuration/
+#
+# v2 changes vs the previous v1 config:
+#   - `version: "2"` is required.
+#   - `linters.disable-all: true` → `linters.default: none`.
+#   - `linters-settings:` moved under `linters.settings:`.
+#   - `issues.exclude-rules:` moved under `linters.exclusions.rules:`.
+#   - `gosimple` collapsed into `staticcheck`.
+#   - `gofmt` / `goimports` moved out of `linters` into a top-level `formatters:` block.
+
+version: "2"
 
 run:
   timeout: 5m
@@ -6,11 +16,10 @@ run:
   tests: true
 
 linters:
-  disable-all: true
+  default: none
   enable:
     # built-in / default
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
@@ -21,8 +30,6 @@ linters:
     - errorlint
     - exhaustive
     - gocritic
-    - gofmt
-    - goimports
     - misspell
     - nakedret
     - nolintlint
@@ -30,27 +37,34 @@ linters:
     - unconvert
     - unparam
     - whitespace
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/RefuseHQ/refuse-cli
-  revive:
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+  exclusions:
     rules:
-      - name: package-comments
-        disabled: true
-  errorlint:
-    errorf: true
-    asserts: true
-    comparison: true
-  gocritic:
-    disabled-checks:
-      - ifElseChain
+      - path: _test\.go
+        linters:
+          - errcheck
+          - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/RefuseHQ/refuse-cli
 
 issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - unparam
   max-issues-per-linter: 0
   max-same-issues: 0
