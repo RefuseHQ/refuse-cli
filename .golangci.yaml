@@ -38,6 +38,17 @@ linters:
     - unparam
     - whitespace
   settings:
+    errcheck:
+      # Failing to write to stdout/stderr or close a response body is not
+      # actionable in a CLI — exclude these from errcheck and rely on
+      # other checks (errorlint, staticcheck) for real error-handling bugs.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (io.Writer).Write
+        - (io.Closer).Close
+        - (*net/http.Response).Body.Close
     revive:
       rules:
         - name: package-comments
