@@ -1,0 +1,24 @@
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # If RELEASE_PLEASE_TOKEN is set (a PAT with `contents: write` on this
+      # repo), tags pushed by release-please will trigger release.yaml. With
+      # only the default GITHUB_TOKEN, the tag is created but downstream
+      # workflows do NOT fire (GitHub policy), so the release would need to
+      # be re-kicked manually. Set the PAT to wire the chain end-to-end.
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
