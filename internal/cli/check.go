@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/parsers"
 	"github.com/RefuseHQ/refuse-cli/internal/server"
-	"github.com/spf13/cobra"
 )
 
 func realCheckCmd() *cobra.Command {

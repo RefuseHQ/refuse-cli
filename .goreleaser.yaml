@@ -26,23 +26,62 @@ builds:
     goarch:
       - amd64
       - arm64
+      - "386"
+      - arm
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      # darwin only ships on amd64 + arm64 today.
+      - goos: darwin
+        goarch: "386"
+      - goos: darwin
+        goarch: arm
+      # 32-bit ARM windows is not a supported Go target.
+      - goos: windows
+        goarch: arm
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else if eq .Arch "arm" }}armv{{ .Arm }}
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
+
+# Cosign-sign the checksum file (and via it, every artifact).
+# Requires `cosign` and an OIDC keyless identity (set up via `id-token: write`
+# in the release workflow). The signature is verifiable with:
+#   cosign verify-blob --certificate-identity-regexp '^https://github.com/RefuseHQ/refuse-cli/' \
+#     --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+#     --certificate checksums.txt.pem --signature checksums.txt.sig checksums.txt
+signs:
+  - cmd: cosign
+    certificate: '${artifact}.pem'
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+# SBOMs for every built binary.
+sboms:
+  - artifacts: archive
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -58,12 +97,9 @@ release:
     name: refuse-cli
   draft: true
 
-brews:
+homebrew_casks:
   - repository:
       owner: RefuseHQ
       name: homebrew-tap
     homepage: https://github.com/RefuseHQ/refuse-cli
     description: PATH shim for npm / pip / cargo / yarn / pnpm / gem / bun / go — refuses to install packages with known CVEs
-    license: Apache-2.0
-    test: |
-      system "#{bin}/refuse", "--version"

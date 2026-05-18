@@ -6,12 +6,12 @@ import "strings"
 // token" patterns used by tokenize(). Each manager extends it via its own
 // table; we keep the universal ones here.
 var universalFlagsTakingArg = map[string]bool{
-	"--prefix":     true,
-	"--registry":   true,
-	"--cwd":        true,
-	"--config":     true,
-	"-C":           true,
-	"--directory":  true,
+	"--prefix":    true,
+	"--registry":  true,
+	"--cwd":       true,
+	"--config":    true,
+	"-C":          true,
+	"--directory": true,
 }
 
 // splitPositionals walks argv left-to-right and returns the positional
@@ -30,12 +30,11 @@ func splitPositionals(args []string, extraTakeArg map[string]bool) []string {
 			continue
 		}
 		// Flag. Decide whether to also skip the next token.
-		base := a
-		if eq := strings.IndexByte(a, '='); eq != -1 {
-			base = a[:eq] // --prefix=/opt → "--prefix", no next-token skip
+		if strings.ContainsRune(a, '=') {
+			// `--prefix=/opt` carries its value inline — never skip the next token.
 			continue
 		}
-		if universalFlagsTakingArg[base] || (extraTakeArg != nil && extraTakeArg[base]) {
+		if universalFlagsTakingArg[a] || (extraTakeArg != nil && extraTakeArg[a]) {
 			skipNext = true
 		}
 	}

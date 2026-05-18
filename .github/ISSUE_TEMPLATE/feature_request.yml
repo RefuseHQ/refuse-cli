@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a new capability or behavior change.
+title: "[feat]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [the roadmap](https://github.com/RefuseHQ/refuse-cli/blob/main/ROADMAP.md) and existing issues first. For large changes, please open a [Discussion](https://github.com/RefuseHQ/refuse-cli/discussions) before doing the work.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the use case before jumping to a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed solution
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of refuse-cli does this touch?
+      multiple: true
+      options:
+        - New package manager parser
+        - New agent hook (Cursor, Continue, Aider, etc.)
+        - New release target / platform
+        - Block message UX
+        - Config / `refuse config`
+        - Install / uninstall flow
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/RefuseHQ/refuse-cli/blob/main/CODE_OF_CONDUCT.md).
+          required: true

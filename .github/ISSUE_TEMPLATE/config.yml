@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/RefuseHQ/refuse-cli/discussions
+    about: Ask questions, share use cases, or float ideas before opening an issue.
+  - name: Security vulnerability
+    url: https://github.com/RefuseHQ/refuse-cli/security/advisories/new
+    about: Report a vulnerability privately. See SECURITY.md.
+  - name: The refuse server
+    url: https://github.com/RefuseHQ/refuse/issues
+    about: Bugs or feature requests for the HTTP server / data pipeline — file there instead.
+  - name: The hosted service (refuse.dev)
+    url: https://refuse.dev
+    about: Anything specific to the hosted deployment — sign in and use the support form.

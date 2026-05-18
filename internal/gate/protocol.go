@@ -13,11 +13,12 @@ import (
 // agents we eventually support can normalise onto.
 //
 // Example:
-//   {
-//     "hook_event_name": "PreToolUse",
-//     "tool_name": "Bash",
-//     "tool_input": { "command": "npm install foo", "description": "..." }
-//   }
+//
+//	{
+//	  "hook_event_name": "PreToolUse",
+//	  "tool_name": "Bash",
+//	  "tool_input": { "command": "npm install foo", "description": "..." }
+//	}
 type HookInput struct {
 	HookEventName string         `json:"hook_event_name"`
 	ToolName      string         `json:"tool_name"`
@@ -70,10 +71,10 @@ func SplitShellCommand(cmd string) ([][]string, error) {
 // quotes are honoured.
 func splitOnConnectors(s string) []string {
 	var (
-		out     []string
-		buf     []byte
+		out      []string
+		buf      []byte
 		inS, inD bool
-		i       int
+		i        int
 	)
 	flush := func() {
 		t := trimSpace(string(buf))

@@ -1,0 +1,25 @@
+# CODEOWNERS for refuse-cli
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default
+*                          @RefuseHQ/maintainers
+
+# Decision engine — high-trust code, all PRs need review
+/internal/gate/            @RefuseHQ/maintainers
+
+# Shim PATH/exec — security-sensitive
+/internal/shim/            @RefuseHQ/maintainers
+
+# Release pipeline
+/.goreleaser.yaml          @RefuseHQ/maintainers
+/.github/workflows/release.yaml @RefuseHQ/maintainers
+/scripts/install.sh        @RefuseHQ/maintainers
+
+# Hooks
+/internal/hook/            @RefuseHQ/maintainers
+
+# CI + governance
+/.github/                  @RefuseHQ/maintainers
+/SECURITY.md               @RefuseHQ/maintainers
+/CODE_OF_CONDUCT.md        @RefuseHQ/maintainers

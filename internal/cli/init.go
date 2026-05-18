@@ -6,8 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/RefuseHQ/refuse-cli/internal/config"
 )
 
 func realInitCmd() *cobra.Command {

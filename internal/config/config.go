@@ -1,11 +1,11 @@
 // Package config loads + validates the refuse CLI config.
 //
 // Layered resolution (highest priority first):
-//   1. command-line flags                       (handled by caller)
-//   2. env vars (REFUSE_SERVER_URL, REFUSE_API_KEY, REFUSE_FAIL_CLOSED, REFUSE_POLICY)
-//   3. project file:  ./.refuse.yaml  (walk up from cwd)
-//   4. user file:     ~/.refuse/config.yaml
-//   5. built-in defaults
+//  1. command-line flags                       (handled by caller)
+//  2. env vars (REFUSE_SERVER_URL, REFUSE_API_KEY, REFUSE_FAIL_CLOSED, REFUSE_POLICY)
+//  3. project file:  ./.refuse.yaml  (walk up from cwd)
+//  4. user file:     ~/.refuse/config.yaml
+//  5. built-in defaults
 package config
 
 import (
