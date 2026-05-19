@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.2...v1.2.3) (2026-05-19)
+
+
+### Bug Fixes
+
+* **sign:** also fetch the G2 Developer ID intermediate ([#25](https://github.com/RefuseHQ/refuse-cli/issues/25)) ([3f9442b](https://github.com/RefuseHQ/refuse-cli/commit/3f9442bb4bd8094a859bb258f4f799641fd55f1d))
+
 ## [1.2.2](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.1...v1.2.2) (2026-05-19)
 
 
