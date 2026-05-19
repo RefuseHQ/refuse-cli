@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.1.0...v1.1.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **release:** wire the cross-repo PAT into the cask push ([#16](https://github.com/RefuseHQ/refuse-cli/issues/16)) ([676df14](https://github.com/RefuseHQ/refuse-cli/commit/676df144ef27a0cf4f98873bbfb913a64272ca14))
+
 ## [1.1.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.0.0...v1.1.0) (2026-05-19)
 
 
