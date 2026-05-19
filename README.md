@@ -33,16 +33,22 @@ Works:
 
 ## Install
 
-**Homebrew** (macOS / Linux):
+**Homebrew** (macOS):
 
 ```sh
 brew install refusehq/tap/refuse
 ```
 
-**Direct binary** (any Unix, with sha256 checksum verification):
+**Direct binary on macOS / Linux** (with sha256 checksum verification):
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
+```
+
+**Direct binary on Windows** (PowerShell, with sha256 checksum verification):
+
+```powershell
+irm https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.ps1 | iex
 ```
 
 **From source**:
