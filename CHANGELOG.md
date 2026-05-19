@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.0...v1.2.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **release:** switch macOS sign+notarize to rcodesign hooks ([#20](https://github.com/RefuseHQ/refuse-cli/issues/20)) ([2fef566](https://github.com/RefuseHQ/refuse-cli/commit/2fef566dcb4e31c55b47cf2d65717f72ee55de34))
+
 ## [1.2.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.1.1...v1.2.0) (2026-05-19)
 
 
