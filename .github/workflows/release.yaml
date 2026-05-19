@@ -33,10 +33,14 @@ jobs:
           version: latest
           args: release --clean
         env:
+          # The release on RefuseHQ/refuse-cli itself is created via the
+          # default workflow token — it only needs contents:write on this
+          # repo and the github-actions bot has that.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Personal access token with write to RefuseHQ/homebrew-tap, expose
-          # as repo secret HOMEBREW_TAP_TOKEN before tagging a release.
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          # The cask push to RefuseHQ/homebrew-tap needs a cross-repo PAT.
+          # `.goreleaser.yaml`'s `homebrew_casks.repository.token` template
+          # reads this env var.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4

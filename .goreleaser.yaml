@@ -101,5 +101,9 @@ homebrew_casks:
   - repository:
       owner: RefuseHQ
       name: homebrew-tap
+      # Use the cross-repo PAT for the cask push — the default
+      # `GITHUB_TOKEN` issued to the release workflow can only write
+      # to RefuseHQ/refuse-cli, so the bot gets 403 on the tap.
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/RefuseHQ/refuse-cli
     description: PATH shim for npm / pip / cargo / yarn / pnpm / gem / bun / go — refuses to install packages with known CVEs
