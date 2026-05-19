@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -18,13 +20,25 @@ type Client struct {
 	HTTP    *http.Client
 }
 
-// New returns a Client with sensible defaults (1.5 s timeout — install gates
-// run interactively and shouldn't wait long).
+// defaultTimeout balances "user is waiting at a terminal" against
+// "transient network jitter / TLS handshake cold-start." 1.5s was too
+// tight in practice — every laptop on hotel Wi-Fi or a long-RTT link
+// fell over.
+const defaultTimeout = 5 * time.Second
+
+// New returns a Client with sensible defaults. The HTTP timeout can be
+// overridden by setting REFUSE_TIMEOUT_MS=<integer milliseconds>.
 func New(baseURL, apiKey string) *Client {
+	timeout := defaultTimeout
+	if v := os.Getenv("REFUSE_TIMEOUT_MS"); v != "" {
+		if ms, err := strconv.Atoi(v); err == nil && ms > 0 {
+			timeout = time.Duration(ms) * time.Millisecond
+		}
+	}
 	return &Client{
 		BaseURL: baseURL,
 		APIKey:  apiKey,
-		HTTP:    &http.Client{Timeout: 1500 * time.Millisecond},
+		HTTP:    &http.Client{Timeout: timeout},
 	}
 }
 

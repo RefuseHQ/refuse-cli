@@ -171,6 +171,8 @@ Environment variables override the file (useful in CI):
 - `REFUSE_POLICY` — sets `severity_threshold`
 - `REFUSE_FAIL_CLOSED` — `1`/`true` to enable
 - `REFUSE_ALLOW_VULNERABLE` — `1`/`true` to bypass a single install
+- `REFUSE_TIMEOUT_MS` — HTTP timeout in milliseconds (default `5000`)
+- `REFUSE_NO_GATE` — `1` to skip the gate entirely for the next call (debug)
 
 ## Pointing at a server
 
