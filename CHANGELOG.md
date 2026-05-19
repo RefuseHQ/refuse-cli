@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.1.1...v1.2.0) (2026-05-19)
+
+
+### Features
+
+* **release:** code-sign + notarize macOS binaries with Apple Developer ID ([#18](https://github.com/RefuseHQ/refuse-cli/issues/18)) ([aa0c512](https://github.com/RefuseHQ/refuse-cli/commit/aa0c5124e93a14513a4f28abd923b0c19ca88897))
+
 ## [1.1.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.1.0...v1.1.1) (2026-05-19)
 
 
