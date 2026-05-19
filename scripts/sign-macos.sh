@@ -38,18 +38,27 @@ printf '%s' "$MACOS_SIGN_P12" | base64 -d > "$p12"
 # Apple's notary requires the full cert chain (leaf → "Developer ID
 # Certification Authority" intermediate → Apple Root CA) to be visible
 # inside the signature. A typical Keychain Access .p12 export only
-# packages the leaf cert + private key, so we fetch the intermediate
-# from Apple's stable URL and pass it to rcodesign as an extra cert to
+# packages the leaf cert + private key, so we fetch the intermediates
+# from Apple's stable URLs and pass them to rcodesign as extra certs to
 # embed.
-intermediate="$tmp/DeveloperIDCA.cer"
-echo "sign-macos: fetching Developer ID Certification Authority intermediate"
-curl -fsSL --retry 3 https://www.apple.com/certificateauthority/DeveloperIDCA.cer -o "$intermediate"
+#
+# Apple issues Developer ID certs from one of two intermediates:
+#   - G1 (legacy):  DeveloperIDCA.cer    — older certs
+#   - G2 (current): DeveloperIDG2CA.cer  — most certs issued from ~2018
+# We fetch both and embed both; rcodesign accepts --certificate-der-file
+# multiple times. Apple's notary picks the matching chain.
+intermediate_g1="$tmp/DeveloperIDCA.cer"
+intermediate_g2="$tmp/DeveloperIDG2CA.cer"
+echo "sign-macos: fetching Developer ID Certification Authority intermediates (G1 + G2)"
+curl -fsSL --retry 3 https://www.apple.com/certificateauthority/DeveloperIDCA.cer    -o "$intermediate_g1"
+curl -fsSL --retry 3 https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer  -o "$intermediate_g2"
 
 echo "sign-macos: signing $BINARY"
 rcodesign sign \
     --p12-file "$p12" \
     --p12-password "$MACOS_SIGN_PASSWORD" \
-    --certificate-der-file "$intermediate" \
+    --certificate-der-file "$intermediate_g1" \
+    --certificate-der-file "$intermediate_g2" \
     --code-signature-flags runtime \
     "$BINARY"
 
