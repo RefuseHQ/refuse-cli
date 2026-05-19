@@ -41,6 +41,16 @@ jobs:
           # `.goreleaser.yaml`'s `homebrew_casks.repository.token` template
           # reads this env var.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          # Apple Developer ID signing + notarization. The MACOS_SIGN_P12
+          # and MACOS_NOTARY_KEY secrets hold base64-encoded blobs of the
+          # .p12 cert and .p8 notary API key. goreleaser's `notarize.macos`
+          # block decodes them. Absent secrets → block is `enabled: false`
+          # and the step becomes a no-op.
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
