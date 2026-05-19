@@ -27,6 +27,15 @@ jobs:
       - uses: sigstore/cosign-installer@v3
       - uses: anchore/sbom-action/download-syft@v0
 
+      - name: Install rcodesign (Apple code-sign + notarize CLI)
+        run: |
+          version=0.29.0
+          archive=apple-codesign-${version}-x86_64-unknown-linux-musl.tar.gz
+          curl -fsSL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${version}/${archive}" \
+            | tar -xz -C /tmp
+          sudo install /tmp/apple-codesign-${version}-x86_64-unknown-linux-musl/rcodesign /usr/local/bin/rcodesign
+          rcodesign --version
+
       - uses: goreleaser/goreleaser-action@v7
         id: goreleaser
         with:
@@ -41,13 +50,15 @@ jobs:
           # `.goreleaser.yaml`'s `homebrew_casks.repository.token` template
           # reads this env var.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          # Apple Developer ID signing + notarization. The MACOS_SIGN_P12
-          # and MACOS_NOTARY_KEY secrets hold base64-encoded blobs of the
-          # .p12 cert and .p8 notary API key. goreleaser's `notarize.macos`
-          # block decodes them. Absent secrets → block is `enabled: false`
-          # and the step becomes a no-op.
+          # Read by scripts/sign-macos.sh, invoked from goreleaser's
+          # builds.hooks.post. Absent → script no-ops.
           MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
           MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+
+      - name: Notarize darwin binaries
+        if: env.MACOS_NOTARY_KEY != ''
+        run: ./scripts/notarize-macos.sh dist
+        env:
           MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}

@@ -40,6 +40,14 @@ builds:
       # 32-bit ARM windows is not a supported Go target.
       - goos: windows
         goarch: arm
+    hooks:
+      post:
+        # Apple Developer ID code-signing for darwin binaries via
+        # `rcodesign` (Rust). Goreleaser's native notarize uses Go's
+        # stdlib x509 which can't parse Apple's critical extension OIDs,
+        # so we shell out to rcodesign instead.
+        # Skips silently for non-darwin and when MACOS_SIGN_P12 is unset.
+        - cmd: scripts/sign-macos.sh "{{ .Path }}" "{{ .Os }}"
 
 archives:
   - formats: [tar.gz]
@@ -75,26 +83,6 @@ signs:
       - "--yes"
     artifacts: checksum
     output: true
-
-# Apple Developer ID code-sign + notarize the macOS binaries so users
-# don't hit Gatekeeper ("Apple could not verify…") on first launch.
-# Gated on MACOS_SIGN_P12 being set so forks without the secrets get a
-# clean no-op rather than an error.
-#
-# Implementation note: goreleaser's `notarize.macos` shells out to
-# rcodesign (built into goreleaser), so this works from a Linux runner —
-# no macOS runner needed.
-notarize:
-  macos:
-    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
-      sign:
-        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
-        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
-      notarize:
-        issuer_id: "{{ .Env.MACOS_NOTARY_ISSUER_ID }}"
-        key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
-        key: "{{ .Env.MACOS_NOTARY_KEY }}"
-        wait: true
 
 # SBOMs for every built binary.
 sboms:
