@@ -12,13 +12,17 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      # If RELEASE_PLEASE_TOKEN is set (a PAT with `contents: write` on this
-      # repo), tags pushed by release-please will trigger release.yaml. With
-      # only the default GITHUB_TOKEN, the tag is created but downstream
-      # workflows do NOT fire (GitHub policy), so the release would need to
-      # be re-kicked manually. Set the PAT to wire the chain end-to-end.
+      # HOMEBREW_TAP_TOKEN is a PAT scoped to BOTH RefuseHQ/refuse-cli
+      # (contents + pull-requests write) and RefuseHQ/homebrew-tap
+      # (contents write). One secret unlocks the whole chain:
+      #   - release-please opens the release PR and pushes the tag
+      #   - tags pushed via this PAT (not GITHUB_TOKEN) trigger release.yaml
+      #     — without the PAT, GitHub policy blocks the cascade
+      #   - goreleaser then publishes the cask to RefuseHQ/homebrew-tap
+      # Falls back to GITHUB_TOKEN so this workflow remains syntactically
+      # valid in forks that don't have the secret.
       - uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
