@@ -70,7 +70,7 @@ func updateShellRC(binDir string, enable bool) ([]string, error) {
 func managedBlock(binDir string) string {
 	var b strings.Builder
 	b.WriteString(beginMarker + "\n")
-	b.WriteString(fmt.Sprintf(`export PATH="%s:$PATH"`, binDir))
+	fmt.Fprintf(&b, `export PATH="%s:$PATH"`, binDir)
 	b.WriteString("\n" + endMarker + "\n")
 	return b.String()
 }
