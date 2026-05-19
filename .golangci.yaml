@@ -49,6 +49,11 @@ linters:
         - (io.Writer).Write
         - (io.Closer).Close
         - (*net/http.Response).Body.Close
+        # Best-effort cleanup of temp files. The atomic-write pattern is
+        # `defer os.Remove(tmp.Name())` + early `tmp.Close()` on the error
+        # path; both are fine to ignore.
+        - os.Remove
+        - (*os.File).Close
     revive:
       rules:
         - name: package-comments
