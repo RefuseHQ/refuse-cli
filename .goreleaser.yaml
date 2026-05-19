@@ -47,7 +47,10 @@ builds:
         # stdlib x509 which can't parse Apple's critical extension OIDs,
         # so we shell out to rcodesign instead.
         # Skips silently for non-darwin and when MACOS_SIGN_P12 is unset.
+        # `output: true` surfaces the script's stdout/stderr in the
+        # goreleaser log — without it, failures are silent.
         - cmd: scripts/sign-macos.sh "{{ .Path }}" "{{ .Os }}"
+          output: true
 
 archives:
   - formats: [tar.gz]

@@ -35,10 +35,21 @@ trap 'rm -rf "$tmp"' EXIT
 p12="$tmp/cert.p12"
 printf '%s' "$MACOS_SIGN_P12" | base64 -d > "$p12"
 
+# Apple's notary requires the full cert chain (leaf → "Developer ID
+# Certification Authority" intermediate → Apple Root CA) to be visible
+# inside the signature. A typical Keychain Access .p12 export only
+# packages the leaf cert + private key, so we fetch the intermediate
+# from Apple's stable URL and pass it to rcodesign as an extra cert to
+# embed.
+intermediate="$tmp/DeveloperIDCA.cer"
+echo "sign-macos: fetching Developer ID Certification Authority intermediate"
+curl -fsSL --retry 3 https://www.apple.com/certificateauthority/DeveloperIDCA.cer -o "$intermediate"
+
 echo "sign-macos: signing $BINARY"
 rcodesign sign \
     --p12-file "$p12" \
     --p12-password "$MACOS_SIGN_PASSWORD" \
+    --certificate-der-file "$intermediate" \
     --code-signature-flags runtime \
     "$BINARY"
 
