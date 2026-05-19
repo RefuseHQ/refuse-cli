@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.1...v1.2.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* **sign:** embed Developer ID intermediate so Apple notary accepts ([#22](https://github.com/RefuseHQ/refuse-cli/issues/22)) ([26b67f7](https://github.com/RefuseHQ/refuse-cli/commit/26b67f780db442aa4bda7992843f5a60c2430ada))
+
 ## [1.2.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.0...v1.2.1) (2026-05-19)
 
 
