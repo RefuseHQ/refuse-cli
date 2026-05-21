@@ -20,11 +20,14 @@ type Client struct {
 	HTTP    *http.Client
 }
 
-// defaultTimeout balances "user is waiting at a terminal" against
-// "transient network jitter / TLS handshake cold-start." 1.5s was too
-// tight in practice — every laptop on hotel Wi-Fi or a long-RTT link
-// fell over.
-const defaultTimeout = 5 * time.Second
+// defaultTimeout balances "user is waiting at a terminal" against the
+// realities of the hosted server. mcp.refuse.dev scales to zero and
+// takes ~4.6s to cold-start; the original 1.5s timeout meant the first
+// install after an idle period always failed open with a scary
+// "server: unreachable" line. 8s absorbs a cold start with margin while
+// still failing reasonably fast when the server is genuinely down.
+// Tunable via REFUSE_TIMEOUT_MS.
+const defaultTimeout = 8 * time.Second
 
 // New returns a Client with sensible defaults. The HTTP timeout can be
 // overridden by setting REFUSE_TIMEOUT_MS=<integer milliseconds>.
