@@ -172,6 +172,20 @@ Environment variables override the file (useful in CI):
 - `REFUSE_FAIL_CLOSED` — `1`/`true` to enable
 - `REFUSE_ALLOW_VULNERABLE` — `1`/`true` to bypass a single install
 
+### Bypassing the gate for one command
+
+Append `--no-refuse` to any wrapped command to skip the gate just this once.
+refuse strips the flag before running the real manager:
+
+```sh
+npm install lodash@4.17.10 --no-refuse   # runs the real npm, ungated
+pip install pyyaml==5.3 --no-refuse
+```
+
+Equivalent to a one-shot `REFUSE_NO_GATE=1`, but inline. This only works
+through the PATH shim (interactive use) — the agent PreToolUse hook
+ignores it, so an autonomous agent can't bypass its own gate.
+
 ## Pointing at a server
 
 **Hosted ([refuse.dev](https://refuse.dev))**:
