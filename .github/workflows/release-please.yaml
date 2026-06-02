@@ -21,7 +21,7 @@ jobs:
       #   - goreleaser then publishes the cask to RefuseHQ/homebrew-tap
       # Falls back to GITHUB_TOKEN so this workflow remains syntactically
       # valid in forks that don't have the secret.
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
