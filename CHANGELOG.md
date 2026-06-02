@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.3...v1.3.0) (2026-06-02)
+
+
+### Features
+
+* **parsers:** wire up cargo, gem, and go shims ([#28](https://github.com/RefuseHQ/refuse-cli/issues/28)) ([8524256](https://github.com/RefuseHQ/refuse-cli/commit/852425606c4c66b5cb1e47eee6343d2b7b45c064))
+* **shim:** add inline --no-refuse bypass flag ([#29](https://github.com/RefuseHQ/refuse-cli/issues/29)) ([47c74d3](https://github.com/RefuseHQ/refuse-cli/commit/47c74d328c3807aa7cb3e6346c47748e32dca183))
+
+
+### Bug Fixes
+
+* **client:** bump HTTP timeout 1.5s → 5s, REFUSE_TIMEOUT_MS override ([#27](https://github.com/RefuseHQ/refuse-cli/issues/27)) ([ebf1c1e](https://github.com/RefuseHQ/refuse-cli/commit/ebf1c1e67d44d574dac09baa948e44e65e86b86a))
+
 ## [1.2.3](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.2...v1.2.3) (2026-05-19)
 
 
