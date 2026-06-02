@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -18,13 +20,28 @@ type Client struct {
 	HTTP    *http.Client
 }
 
-// New returns a Client with sensible defaults (1.5 s timeout — install gates
-// run interactively and shouldn't wait long).
+// defaultTimeout balances "user is waiting at a terminal" against the
+// realities of the hosted server. mcp.refuse.dev scales to zero and
+// takes ~4.6s to cold-start; the original 1.5s timeout meant the first
+// install after an idle period always failed open with a scary
+// "server: unreachable" line. 8s absorbs a cold start with margin while
+// still failing reasonably fast when the server is genuinely down.
+// Tunable via REFUSE_TIMEOUT_MS.
+const defaultTimeout = 8 * time.Second
+
+// New returns a Client with sensible defaults. The HTTP timeout can be
+// overridden by setting REFUSE_TIMEOUT_MS=<integer milliseconds>.
 func New(baseURL, apiKey string) *Client {
+	timeout := defaultTimeout
+	if v := os.Getenv("REFUSE_TIMEOUT_MS"); v != "" {
+		if ms, err := strconv.Atoi(v); err == nil && ms > 0 {
+			timeout = time.Duration(ms) * time.Millisecond
+		}
+	}
 	return &Client{
 		BaseURL: baseURL,
 		APIKey:  apiKey,
-		HTTP:    &http.Client{Timeout: 1500 * time.Millisecond},
+		HTTP:    &http.Client{Timeout: timeout},
 	}
 }
 
