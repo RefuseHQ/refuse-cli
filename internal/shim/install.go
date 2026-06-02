@@ -11,7 +11,7 @@ import (
 
 // Default managers to install shims for. install/uninstall iterate over this.
 // Order is stable for deterministic output.
-var DefaultShims = []string{"npm", "pnpm", "yarn", "bun", "pip", "pip3"}
+var DefaultShims = []string{"npm", "pnpm", "yarn", "bun", "pip", "pip3", "cargo", "gem", "go"}
 
 // InstallResult is the structured summary `refuse install` reports back.
 type InstallResult struct {

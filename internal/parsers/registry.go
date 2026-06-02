@@ -14,6 +14,12 @@ func ForName(name string) Parser {
 		return Bun()
 	case "pip", "pip3":
 		return Pip()
+	case "cargo":
+		return Cargo()
+	case "gem":
+		return Gem()
+	case "go":
+		return Go()
 	}
 	return nil
 }
