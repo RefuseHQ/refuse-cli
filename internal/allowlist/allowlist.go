@@ -102,8 +102,11 @@ func Save(path string, f *File) error {
 	}
 	enc := yaml.NewEncoder(out)
 	enc.SetIndent(2)
-	defer enc.Close()
-	return enc.Encode(f)
+	if err := enc.Encode(f); err != nil {
+		_ = enc.Close()
+		return err
+	}
+	return enc.Close()
 }
 
 // IsAllowed reports whether a given (cve, ecosystem, package) tuple is
