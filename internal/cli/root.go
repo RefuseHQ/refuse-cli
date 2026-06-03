@@ -35,6 +35,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(realPipGateCmd())
 	root.AddCommand(realAuditCmd())
 	root.AddCommand(realAllowlistCmd())
+	root.AddCommand(realFixCmd())
 
 	return root
 }
