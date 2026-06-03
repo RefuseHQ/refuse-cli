@@ -8,8 +8,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/RefuseHQ/refuse-cli/internal/allowlist"
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/parsers"
 	"github.com/RefuseHQ/refuse-cli/internal/server"
@@ -76,6 +79,10 @@ func (e Engine) Decide(ctx context.Context, p parsers.ParseResult) Result {
 	if err != nil {
 		return e.failOpenOrClosed(err)
 	}
+
+	// Apply the project-local allowlist (`.refuse.yaml`) — strip
+	// advisories the team has formally accepted before the gate decides.
+	applyAllowlist(p, &resp)
 
 	worst := worstSeverity(resp.Results)
 	threshold := config.SeverityRank(e.Policy.SeverityThreshold)
@@ -188,4 +195,68 @@ func truthy(s string) bool {
 		return true
 	}
 	return false
+}
+
+// applyAllowlist strips advisories that match a project-local
+// `.refuse.yaml` allowlist entry. After this runs, the gate's severity
+// counting and renderBlock behave as if the allowlisted CVEs simply
+// weren't present. A package whose advisories all get stripped has its
+// `vulnerable` flag cleared and BatchSummary.Vulnerable decremented.
+//
+// Best-effort: any error loading `.refuse.yaml` is silently ignored so a
+// malformed file can't break the gate. Walk start = cwd (mirrors how
+// project tools usually resolve config).
+func applyAllowlist(_ parsers.ParseResult, resp *server.BatchCheckResponse) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+	path := allowlist.Find(cwd)
+	if path == "" {
+		return
+	}
+	f, err := allowlist.Load(path)
+	if err != nil || f == nil || len(f.Allowlist) == 0 {
+		return
+	}
+	now := time.Now()
+	for i := range resp.Results {
+		r := &resp.Results[i]
+		if !r.Vulnerable {
+			continue
+		}
+		kept := r.Vulnerabilities[:0]
+		for _, v := range r.Vulnerabilities {
+			cve := ""
+			if v.CVE != nil {
+				cve = *v.CVE
+			}
+			if cve == "" {
+				kept = append(kept, v)
+				continue
+			}
+			// Try matching against the package's ecosystem when we have
+			// it. Server responses don't carry the eco label per row, so
+			// only the package-name leg of the match is enforced.
+			if _, ok := f.IsAllowed(now, cve, "", r.Package); ok {
+				// Suppressed — fall through (do not append).
+				if resp.Summary.BySeverity != nil {
+					if rank := config.SeverityRank(v.SeverityLabel); rank > 0 {
+						if resp.Summary.BySeverity[v.SeverityLabel] > 0 {
+							resp.Summary.BySeverity[v.SeverityLabel]--
+						}
+					}
+				}
+				continue
+			}
+			kept = append(kept, v)
+		}
+		r.Vulnerabilities = kept
+		if len(kept) == 0 {
+			r.Vulnerable = false
+			if resp.Summary.Vulnerable > 0 {
+				resp.Summary.Vulnerable--
+			}
+		}
+	}
 }

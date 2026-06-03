@@ -34,6 +34,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(realPythonHookCmd())
 	root.AddCommand(realPipGateCmd())
 	root.AddCommand(realAuditCmd())
+	root.AddCommand(realAllowlistCmd())
 
 	return root
 }
