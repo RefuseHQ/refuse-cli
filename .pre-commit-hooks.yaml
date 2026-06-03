@@ -1,0 +1,53 @@
+# Hooks for https://pre-commit.com
+#
+# Wire this into a project's .pre-commit-config.yaml:
+#
+#   repos:
+#     - repo: https://github.com/RefuseHQ/refuse-cli
+#       rev: v1.2.3                     # pin a refuse release
+#       hooks:
+#         - id: refuse-check
+#
+# By default `refuse-check` runs `refuse check-lockfile` against every
+# lockfile in the project on every commit (no args = all matched files).
+# It exits 2 — and aborts the commit — if anything vulnerable is found.
+#
+# Set REFUSE_SERVER_URL / REFUSE_API_KEY in your shell, or pre-commit
+# `env:` block, before committing.
+
+- id: refuse-check
+  name: refuse — scan changed lockfiles for known CVEs
+  description: Run `refuse check-lockfile` on every modified lockfile.
+  entry: refuse check-lockfile
+  language: system
+  # Match every lockfile format the server understands. pre-commit
+  # iterates the matched files and calls `refuse check-lockfile <file>`
+  # once per file; any non-zero exit aborts the commit.
+  files: |
+    (?x)^(
+      .*package-lock\.json|
+      .*yarn\.lock|
+      .*pnpm-lock\.yaml|
+      .*bun\.lock(b)?|
+      .*requirements.*\.txt|
+      .*Pipfile\.lock|
+      .*poetry\.lock|
+      .*pdm\.lock|
+      .*uv\.lock|
+      .*Cargo\.lock|
+      .*Gemfile\.lock|
+      .*go\.sum|
+      .*composer\.lock|
+      .*pom\.xml|
+      .*\.csproj|
+      .*mix\.lock|
+      .*pubspec\.lock
+    )$
+
+- id: refuse-check-installed-pip
+  name: refuse — scan the currently-installed pip set
+  description: Run `pip freeze` and feed the output through `refuse check-lockfile`. Catches things that landed via `python -m pip`, `uv pip`, or conda.
+  entry: bash -c 'pip freeze | refuse check-lockfile --filename=requirements.txt /dev/stdin'
+  language: system
+  pass_filenames: false
+  stages: [pre-push]   # heavier — only on push, not every commit

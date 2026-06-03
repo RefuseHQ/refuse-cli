@@ -1,0 +1,109 @@
+name: refuse — scan lockfiles for CVEs
+description: |
+  Install refuse-cli on the runner and gate the build on lockfile scans. Fails
+  the workflow if any matched lockfile contains a package above the configured
+  severity threshold.
+author: RefuseHQ
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  server-url:
+    description: refuse server URL. Defaults to the hosted endpoint.
+    required: false
+    default: https://mcp.refuse.dev
+  api-key:
+    description: refuse API key (rfs_...). Required for the hosted server.
+    required: false
+    default: ""
+  lockfiles:
+    description: |
+      Newline-separated list of lockfile paths to scan. Glob-style entries are
+      expanded by the shell. Leave empty to auto-discover the common formats
+      under the workspace root.
+    required: false
+    default: ""
+  version:
+    description: refuse-cli version to install (e.g. "1.2.3" or "latest").
+    required: false
+    default: latest
+  severity:
+    description: |
+      Severity floor. Anything at or above this severity blocks the build.
+      One of low | medium | high | critical.
+    required: false
+    default: ""
+  fail-on-error:
+    description: |
+      If "true" (default), a server/network error fails the workflow. Set to
+      "false" to fall through on transient errors and rely on later runs.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install refuse-cli
+      shell: bash
+      env:
+        REFUSE_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
+        echo "$HOME/.refuse/bin" >> "$GITHUB_PATH"
+
+    - name: Scan lockfiles
+      shell: bash
+      env:
+        REFUSE_SERVER_URL: ${{ inputs.server-url }}
+        REFUSE_API_KEY: ${{ inputs.api-key }}
+        REFUSE_POLICY: ${{ inputs.severity }}
+        REFUSE_FAIL_CLOSED: ${{ inputs.fail-on-error == 'true' && '1' || '0' }}
+        REFUSE_LOCKFILES: ${{ inputs.lockfiles }}
+      run: |
+        set -euo pipefail
+
+        # Build the file list. Explicit input wins; otherwise auto-discover.
+        if [ -n "${REFUSE_LOCKFILES:-}" ]; then
+          mapfile -t files < <(echo "$REFUSE_LOCKFILES" | tr ',' '\n' | sed '/^$/d')
+        else
+          # Common lockfile names. Use null-delimited find for safety against
+          # whitespace in repo paths.
+          mapfile -d '' files < <(find . \
+            -type d \( -name node_modules -o -name .git -o -name vendor \) -prune -o \
+            \( -name package-lock.json \
+            -o -name yarn.lock \
+            -o -name pnpm-lock.yaml \
+            -o -name bun.lock -o -name bun.lockb \
+            -o -name requirements.txt \
+            -o -name Pipfile.lock \
+            -o -name poetry.lock \
+            -o -name pdm.lock \
+            -o -name uv.lock \
+            -o -name Cargo.lock \
+            -o -name Gemfile.lock \
+            -o -name go.sum \
+            -o -name composer.lock \
+            -o -name pom.xml \
+            -o -name '*.csproj' \
+            -o -name mix.lock \
+            -o -name pubspec.lock \
+            \) -print0)
+        fi
+
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "refuse-action: no lockfiles found — nothing to scan."
+          exit 0
+        fi
+
+        echo "refuse-action: scanning ${#files[@]} lockfile(s)"
+        any_failed=0
+        for f in "${files[@]}"; do
+          echo "::group::refuse check-lockfile $f"
+          if ! refuse check-lockfile "$f"; then
+            any_failed=1
+          fi
+          echo "::endgroup::"
+        done
+        exit "$any_failed"

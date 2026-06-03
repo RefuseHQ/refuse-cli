@@ -204,22 +204,72 @@ docker run --rm -p 8080:8080 ghcr.io/refusehq/refuse:latest
 refuse config set server_url http://localhost:8080
 ```
 
-## In CI
+## Enforcement layer — pre-commit + CI
+
+The PATH shim is a convenient first line, but anything that bypasses it
+(`python -m pip`, `uv`, absolute-path calls, `conda install`, a Dockerfile
+layer that doesn't inherit the shim PATH) won't be gated. The **deterministic**
+gate is `refuse check-lockfile` — it inspects the resolved manifest no
+matter how a dep got there.
+
+Wire it into both ends of the pipeline:
+
+### Pre-commit (local)
+
+Block a vulnerable lockfile from being committed in the first place. In
+your project's `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: https://github.com/RefuseHQ/refuse-cli
+    rev: v1.2.3          # pin a refuse release
+    hooks:
+      - id: refuse-check
+      # Optional, heavier — only on push:
+      - id: refuse-check-installed-pip
+```
+
+`refuse-check` scans every common lockfile that changed in the commit
+(`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `requirements.txt`,
+`Pipfile.lock`, `poetry.lock`, `pdm.lock`, `uv.lock`, `Cargo.lock`,
+`Gemfile.lock`, `go.sum`, `composer.lock`, `pom.xml`, `*.csproj`,
+`mix.lock`, `pubspec.lock`) and aborts the commit on any vulnerable hit.
+
+`refuse-check-installed-pip` runs on `pre-push` only and pipes
+`pip freeze` through `refuse check-lockfile`, catching deps that arrived
+via `python -m pip`, `uv pip`, or `conda install`.
+
+### GitHub Actions (CI)
+
+Use the bundled composite action:
 
 ```yaml
 # .github/workflows/ci.yaml
 jobs:
-  install:
+  refuse:
     runs-on: ubuntu-latest
-    env:
-      REFUSE_SERVER_URL: https://mcp.refuse.dev
-      REFUSE_API_KEY: ${{ secrets.REFUSE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install refuse
-        run: curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
-      - run: $HOME/.refuse/bin/refuse check-lockfile package-lock.json   # exits 2 on a vulnerable hit
-      - run: npm ci
+      - uses: RefuseHQ/refuse-cli@v1.2.3
+        with:
+          api-key: ${{ secrets.REFUSE_API_KEY }}
+          # lockfiles: |       # optional override — auto-discovers if blank
+          #   package-lock.json
+          #   requirements.txt
+```
+
+Auto-discovers every supported lockfile in the workspace and fails the
+build on a vulnerable hit. Inputs: `server-url`, `api-key`, `lockfiles`,
+`version`, `severity`, `fail-on-error` — see [`action.yml`](./action.yml).
+
+### One-off / arbitrary scan
+
+```sh
+# Scan an explicit lockfile
+refuse check-lockfile package-lock.json
+
+# Scan currently-installed pip set (catches `python -m pip` / conda)
+pip freeze | refuse check-lockfile --filename=requirements.txt /dev/stdin
 ```
 
 ## How it relates to the other refuse projects
