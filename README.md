@@ -75,6 +75,7 @@ Other platforms can `go install` from source.
 refuse init                       # interactive: server URL + API key
 refuse install                    # writes shims to ~/.refuse/bin + updates PATH
 refuse hook install claude-code   # PreToolUse hook in ~/.claude/settings.json
+refuse python-hook install        # closes the `python -m pip` bypass (per Python env)
 ```
 
 Then run anything you'd normally run:
@@ -105,6 +106,21 @@ flowchart LR
 A single Go binary, symlinked into `~/.refuse/bin/` under each manager's name. When `npm` is invoked, the shim parses the argv, asks the server, and either `exec`s the real `npm` on PATH or exits with code 2 and a message.
 
 For details, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+### Closing the `python -m pip` bypass
+
+The PATH shim doesn't catch `python -m pip install …` because it's a module invocation, not a binary on PATH. `refuse python-hook install` drops a `.pth` + small Python module into a Python env's site-packages; Python processes `.pth` files at interpreter startup and the module monkey-patches pip's `InstallCommand` to first shell out to `refuse pip-gate <args>`.
+
+```sh
+refuse python-hook install                     # current python3 on PATH
+refuse python-hook install --python=$(pwd)/.venv/bin/python   # specific env
+refuse python-hook status                      # show whether the hook is active
+refuse python-hook uninstall
+```
+
+After installing, `python -m pip install pyyaml==5.3` is blocked the same way `pip install pyyaml==5.3` is. The hook fails open on any transient refuse error, so unrelated Python tooling isn't broken if the server's unreachable.
+
+Per env — re-run after creating a new venv. Set `REFUSE_NO_GATE=1` to bypass for a single invocation.
 
 ## Supported package managers
 
