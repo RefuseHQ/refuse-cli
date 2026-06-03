@@ -131,4 +131,3 @@ func resolveSiteDir(target, pythonBin string) (string, error) {
 	}
 	return site, nil
 }
-
