@@ -16,15 +16,31 @@ func IsKnownManager(name string) bool {
 // KnownManagers is the set of binary names we install shims for. The value
 // is the ecosystem identifier we send to the refuse server.
 var KnownManagers = map[string]string{
-	"npm":    "npm",
-	"pnpm":   "npm",
-	"yarn":   "npm",
+	// npm ecosystem
+	"npm":  "npm",
+	"pnpm": "npm",
+	"yarn": "npm",
+	"bun":  "npm",
+	"npx":  "npm",
+	// PyPI ecosystem
 	"pip":    "PyPI",
 	"pip3":   "PyPI",
-	"cargo":  "crates.io",
-	"gem":    "RubyGems",
-	"bun":    "npm",
-	"go":     "Go",
+	"uv":     "PyPI",
+	"poetry": "PyPI",
+	"pipenv": "PyPI",
+	"pdm":    "PyPI",
+	"pipx":   "PyPI",
+	// crates.io
+	"cargo": "crates.io",
+	// RubyGems
+	"gem":     "RubyGems",
+	"bundle":  "RubyGems",
+	"bundler": "RubyGems",
+	// Go modules
+	"go": "Go",
+	// Packagist (PHP)
+	"composer": "Packagist",
+	// NuGet
 	"dotnet": "NuGet",
 }
 
