@@ -69,3 +69,15 @@ type CheckLockfileRequest struct {
 	Filename string `json:"filename"`
 	Content  string `json:"content"`
 }
+
+// CheckDockerfileRequest is the body for POST /api/v1/check/dockerfile.
+type CheckDockerfileRequest struct {
+	Filename string `json:"filename"`
+	Content  string `json:"content"`
+}
+
+// CheckWorkflowRequest is the body for POST /api/v1/check/workflow.
+type CheckWorkflowRequest struct {
+	Filename string `json:"filename"`
+	Content  string `json:"content"`
+}

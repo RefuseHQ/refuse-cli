@@ -160,6 +160,7 @@ PRs welcome — see [`internal/hook/claudecode.go`](./internal/hook/claudecode.g
 | `refuse hook list` | Show all installed hooks |
 | `refuse check <eco> <pkg>[@<ver>]` | One-off check |
 | `refuse check-lockfile <path>` | Scan an entire lockfile |
+| `refuse audit [path]` | One-shot scan of every lockfile / Dockerfile / GH-Actions workflow under a directory |
 | `refuse gate` | The decision engine — shims + hooks call this on stdin |
 | `refuse config show \| set \| get` | Manage `~/.refuse/config.yaml` |
 | `refuse status` | Diagnose install state |

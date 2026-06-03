@@ -75,6 +75,20 @@ func (c *Client) CheckLockfile(ctx context.Context, req CheckLockfileRequest) (B
 	return out, err
 }
 
+// CheckDockerfile runs a check_dockerfile request.
+func (c *Client) CheckDockerfile(ctx context.Context, req CheckDockerfileRequest) (BatchCheckResponse, error) {
+	var out BatchCheckResponse
+	err := c.post(ctx, "/api/v1/check/dockerfile", req, &out)
+	return out, err
+}
+
+// CheckWorkflow runs a check_workflow request.
+func (c *Client) CheckWorkflow(ctx context.Context, req CheckWorkflowRequest) (BatchCheckResponse, error) {
+	var out BatchCheckResponse
+	err := c.post(ctx, "/api/v1/check/workflow", req, &out)
+	return out, err
+}
+
 func (c *Client) post(ctx context.Context, path string, in any, out any) error {
 	body, err := json.Marshal(in)
 	if err != nil {

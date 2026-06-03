@@ -33,6 +33,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(realDoctorCmd())
 	root.AddCommand(realPythonHookCmd())
 	root.AddCommand(realPipGateCmd())
+	root.AddCommand(realAuditCmd())
 
 	return root
 }
