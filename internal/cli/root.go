@@ -36,6 +36,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(realAuditCmd())
 	root.AddCommand(realAllowlistCmd())
 	root.AddCommand(realFixCmd())
+	root.AddCommand(realProxyCmd())
 
 	return root
 }
