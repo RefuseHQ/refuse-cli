@@ -56,12 +56,17 @@ func realCheckCmd() *cobra.Command {
 
 func realCheckLockfileCmd() *cobra.Command {
 	var jsonOut bool
+	var filenameOverride string
 	cmd := &cobra.Command{
 		Use:   "check-lockfile <path>",
 		Short: "Parse and check a lockfile",
 		Long: `Supports the lockfile formats the server knows: package-lock.json,
 yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, Gemfile.lock,
-go.sum, composer.lock, pom.xml, *.csproj, mix.lock, pubspec.lock.`,
+go.sum, composer.lock, pom.xml, *.csproj, mix.lock, pubspec.lock.
+
+The server detects format from the filename. Pass --filename to override
+when the path on disk doesn't match (e.g. ` + "`pip freeze > /tmp/x.txt`" + `
+then ` + "`refuse check-lockfile /tmp/x.txt --filename=requirements.txt`" + `).`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load()
@@ -75,8 +80,12 @@ go.sum, composer.lock, pom.xml, *.csproj, mix.lock, pubspec.lock.`,
 			ctx, cancel := context.WithTimeout(context.Background(), defaultLockfileTimeout)
 			defer cancel()
 			c := server.New(cfg.ServerURL, cfg.APIKey)
+			filename := filepathBase(args[0])
+			if filenameOverride != "" {
+				filename = filenameOverride
+			}
 			res, err := c.CheckLockfile(ctx, server.CheckLockfileRequest{
-				Filename: filepathBase(args[0]),
+				Filename: filename,
 				Content:  string(content),
 			})
 			if err != nil {
@@ -93,5 +102,6 @@ go.sum, composer.lock, pom.xml, *.csproj, mix.lock, pubspec.lock.`,
 		},
 	}
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print the raw JSON response instead of a summary")
+	cmd.Flags().StringVar(&filenameOverride, "filename", "", "Treat the file as this format (e.g. requirements.txt) regardless of its actual path")
 	return cmd
 }
