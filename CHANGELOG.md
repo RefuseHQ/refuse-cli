@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.0...v1.3.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **shim:** --no-refuse and other PATH lookups recursed into the shim ([#41](https://github.com/RefuseHQ/refuse-cli/issues/41)) ([1f19e68](https://github.com/RefuseHQ/refuse-cli/commit/1f19e68eed47371be3782e1163a92afef4d1b57c))
+
 ## [1.3.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.2.3...v1.3.0) (2026-06-03)
 
 
