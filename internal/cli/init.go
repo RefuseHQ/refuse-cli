@@ -14,10 +14,14 @@ import (
 func realInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "First-time setup wizard (server URL + API key)",
+		Short: "Set or update the refuse server URL + API key",
 		Long: `Interactive — asks for the refuse server URL and (optionally) an API key,
 then persists them to ~/.refuse/config.yaml. Safe to re-run: existing values
-become the default for each prompt.`,
+become the default for each prompt.
+
+Optional. ` + "`refuse install`" + ` writes a working default config (hosted
+server, anonymous, fail-open) on its own, so you only need to run init if
+you want to attach an API key, switch servers, or change the policy.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _ := config.Load()
 			r := bufio.NewReader(os.Stdin)

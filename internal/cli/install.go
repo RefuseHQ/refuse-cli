@@ -1,10 +1,13 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/shim"
 )
 
@@ -18,9 +21,21 @@ prepend that directory to PATH via your shell's rc file (.bashrc / .zshrc /
 .profile / fish conf.d). The shims dispatch back into the refuse binary
 which vets each install before exec'ing the real package manager.
 
-By default we install shims for: npm, pnpm, yarn, bun, pip, pip3.
-Pass --shims=npm,pip to scope.`,
+If no ~/.refuse/config.yaml exists, install writes the default one (hosted
+server, anonymous, fail-open) so the shims are usable immediately. Run
+` + "`refuse init`" + ` afterwards to attach an API key or switch servers.
+
+By default we install shims for the full supported set; pass --shims=npm,pip
+to scope.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Materialize a default config if the user hasn't run `refuse init`
+			// yet. Keeps the install snippet on refuse.dev one step shorter and
+			// makes `cat ~/.refuse/config.yaml` show what server the shims hit.
+			wroteDefault, defaultPath, cfgErr := writeDefaultConfigIfMissing()
+			if cfgErr != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "refuse: skipped writing default config: %v\n", cfgErr)
+			}
+
 			res, err := shim.Install(shims)
 			if err != nil {
 				return err
@@ -35,12 +50,37 @@ Pass --shims=npm,pip to scope.`,
 			for _, p := range res.ShellRC {
 				fmt.Fprintf(cmd.OutOrStdout(), "  updated %s\n", p)
 			}
+			if wroteDefault {
+				fmt.Fprintf(cmd.OutOrStdout(), "  wrote default config: %s (hosted server, anonymous)\n", defaultPath)
+				fmt.Fprintln(cmd.OutOrStdout(), "    → run `refuse init` to attach an API key or switch servers")
+			}
 			fmt.Fprintln(cmd.OutOrStdout(), "\nOpen a new shell (or run `exec $SHELL`) to pick up the PATH update.")
 			return nil
 		},
 	}
-	cmd.Flags().StringSliceVar(&shims, "shims", nil, "Comma-separated list of managers (default: npm,pnpm,yarn,bun,pip,pip3)")
+	cmd.Flags().StringSliceVar(&shims, "shims", nil, "Comma-separated list of managers (default: the full supported set)")
 	return cmd
+}
+
+// writeDefaultConfigIfMissing stats ~/.refuse/config.yaml; if it doesn't
+// exist, writes config.Defaults() there so the shims have something to read.
+// Returns whether it actually wrote the file, the path on disk, and any
+// non-fatal error (e.g. UserDir lookup failure).
+func writeDefaultConfigIfMissing() (wrote bool, path string, err error) {
+	p, perr := config.UserConfigPath()
+	if perr != nil {
+		return false, "", perr
+	}
+	if _, statErr := os.Stat(p); statErr == nil {
+		// Already there — nothing to do.
+		return false, p, nil
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		return false, p, statErr
+	}
+	if err := config.Save(config.Defaults()); err != nil {
+		return false, p, err
+	}
+	return true, p, nil
 }
 
 func realUninstallCmd() *cobra.Command {

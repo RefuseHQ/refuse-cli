@@ -22,11 +22,20 @@ const (
 	DefaultServerURL = "https://mcp.refuse.dev"
 	UserConfigFile   = "config.yaml"
 	ProjectFile      = ".refuse.yaml"
+	// CurrentConfigVersion is the schema version stamped on every config we
+	// write. Existing configs without a version are treated as v1. Bump this
+	// (and add a one-block migration in Load) when defaults change in a way
+	// that should reach existing users (e.g. flipping fail_closed=true).
+	CurrentConfigVersion = 1
 )
 
 // Config is the resolved config. Nil-able pointers are deliberate so we can
 // tell "the user explicitly set X to false" from "X was unset".
 type Config struct {
+	// Version is the config schema version. 0 / missing means "written before
+	// versioning was introduced — treat as v1." Bump CurrentConfigVersion when
+	// the meaning of any field changes.
+	Version   int    `yaml:"config_version,omitempty"`
 	ServerURL string `yaml:"server_url"`
 	APIKey    string `yaml:"api_key"`
 	Policy    Policy `yaml:"policy"`
@@ -51,8 +60,12 @@ type Policy struct {
 	OverrideEnv string `yaml:"override_env"`
 }
 
-func defaults() Config {
+// Defaults returns the built-in default Config. Exported so the install
+// command can stamp it onto disk as the auto-created config — keeping the
+// "what defaults look like" answer in one place.
+func Defaults() Config {
 	return Config{
+		Version:   CurrentConfigVersion,
 		ServerURL: DefaultServerURL,
 		Policy: Policy{
 			SeverityThreshold: "high",
@@ -88,7 +101,7 @@ func UserConfigPath() (string, error) {
 // Load returns the resolved Config. Errors are non-fatal where possible —
 // a missing config file is fine, a malformed one returns an error.
 func Load() (Config, error) {
-	cfg := defaults()
+	cfg := Defaults()
 
 	// user file
 	if path, err := UserConfigPath(); err == nil {
@@ -121,7 +134,19 @@ func Load() (Config, error) {
 	}
 
 	cfg.ServerURL = strings.TrimRight(cfg.ServerURL, "/")
+	migrate(&cfg)
 	return cfg, nil
+}
+
+// migrate brings older on-disk configs up to CurrentConfigVersion. Today it's
+// a no-op for v0 (pre-versioning) → v1 because the schema didn't actually
+// change. Add a branch here when bumping CurrentConfigVersion so existing
+// users converge on new defaults rather than carrying a stale snapshot.
+func migrate(cfg *Config) {
+	if cfg.Version == 0 {
+		cfg.Version = 1
+	}
+	// Future: switch on cfg.Version and apply per-version bumps here.
 }
 
 func mergeFromFile(cfg *Config, path string) error {
