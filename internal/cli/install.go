@@ -35,7 +35,7 @@ Pass --shims=npm,pip to scope.`,
 			for _, p := range res.ShellRC {
 				fmt.Fprintf(cmd.OutOrStdout(), "  updated %s\n", p)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "\nOpen a new shell (or run `exec $SHELL`) to pick up the PATH update.")
+			fmt.Fprintln(cmd.OutOrStdout(), "\nOpen a new terminal for the PATH update to take effect.")
 			return nil
 		},
 	}
@@ -62,7 +62,7 @@ func realUninstallCmd() *cobra.Command {
 			for _, p := range res.ShellRC {
 				fmt.Fprintf(cmd.OutOrStdout(), "  cleaned %s\n", p)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "\nOpen a new shell for the PATH change to take effect.")
+			fmt.Fprintln(cmd.OutOrStdout(), "\nOpen a new terminal for the PATH change to take effect.")
 			return nil
 		},
 	}
