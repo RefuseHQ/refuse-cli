@@ -6,15 +6,20 @@ For the latest, see [milestones](https://github.com/RefuseHQ/refuse-cli/mileston
 
 The gate is the production-ready piece. Most other subcommands (`refuse init`, `refuse install`, `refuse hook install`) are wired up but thin — some still print "not yet implemented" for edge cases. Use at your own risk and please file issues.
 
+## Recently shipped
+
+- [x] Cosign-signed release binaries + checksums.
+- [x] SLSA build provenance attestation.
+- [x] golangci-lint configuration and CI step.
+- [x] Cross-platform build matrix (GoReleaser).
+- [x] Homebrew tap.
+
 ## Near-term — towards 0.1.0
 
 - [ ] Finish all the CLI stubs: `refuse init`, `refuse install`, `refuse uninstall`, `refuse hook install/remove/list`, `refuse check`, `refuse check-lockfile`, `refuse status`, `refuse doctor`.
-- [ ] Cosign-signed release binaries + checksums.
-- [ ] SLSA build provenance attestation.
 - [ ] `refuse doctor` actually inspects the environment (PATH, shim resolution, server reachability, hook presence).
 - [ ] Better block message — multi-line, colored, with copy-paste upgrade command.
 - [ ] Test coverage thresholds in CI (fail under 70%).
-- [ ] golangci-lint configuration and CI step.
 
 ## Medium-term — towards 0.2.0
 
