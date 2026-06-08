@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.4...v1.3.5) (2026-06-08)
+
+
+### Bug Fixes
+
+* **install.ps1:** patch PowerShell profile so refuse beats machine PATH ([#53](https://github.com/RefuseHQ/refuse-cli/issues/53)) ([ffaa78c](https://github.com/RefuseHQ/refuse-cli/commit/ffaa78c781e3caf72260cea7b675a61af193b428))
+
 ## [1.3.4](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.3...v1.3.4) (2026-06-08)
 
 
