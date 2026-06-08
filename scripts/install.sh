@@ -72,14 +72,43 @@ mv "$TMP/refuse" "$INSTALL_DIR/refuse"
 chmod +x "$INSTALL_DIR/refuse"
 
 echo "refuse: installed $INSTALL_DIR/refuse"
+
+# Write a managed PATH-prepend block to every shell rc that already exists.
+# Same delimiters as `refuse install` later uses for its shim block, so the
+# two layers don't fight. Only touches existing files — won't create one
+# from scratch (matches Homebrew's principle: don't make new dotfiles for
+# the user).
+patch_rc() {
+  rc=$1
+  [ -e "$rc" ] || return 0
+  marker_begin="# >>> refuse cli (managed) >>>"
+  marker_end="# <<< refuse cli (managed) <<<"
+  # Skip if already patched (idempotent re-installs).
+  if grep -qF "$marker_begin" "$rc" 2>/dev/null; then
+    return 0
+  fi
+  {
+    echo ""
+    echo "$marker_begin"
+    echo "export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo "$marker_end"
+  } >> "$rc"
+  echo "refuse: added PATH export to $rc"
+}
+
 case ":$PATH:" in
   *":$INSTALL_DIR:"*) ;;
   *)
+    for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+      patch_rc "$rc"
+    done
+
     echo
-    echo "refuse: add $INSTALL_DIR to your PATH, e.g."
-    echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.zshrc"
+    echo "refuse: for THIS shell, run —"
+    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo "(future shells pick it up automatically from the rc edits above)"
     echo
     ;;
 esac
 
-echo "refuse: try \`refuse --version\` and then \`refuse init\`"
+echo "refuse: then try \`refuse --version\` and \`refuse init\`"
