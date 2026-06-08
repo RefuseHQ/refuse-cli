@@ -1,13 +1,9 @@
 package shim
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
-	"syscall"
 )
 
 // osExecutable is a seam over os.Executable so tests can simulate a
@@ -86,42 +82,4 @@ func findReal(name string) (string, error) {
 		return cand, nil
 	}
 	return "", fmt.Errorf("refuse: real %q not found on PATH (self dirs %v excluded)", name, dirs)
-}
-
-// execReal replaces the current process with the real package manager. On
-// Unix this is a syscall.Exec — the parent shell sees the real exit code
-// directly. On Windows we fall back to os/exec since true exec doesn't
-// exist there.
-func execReal(name string, args []string) int {
-	bin, err := findReal(name)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return 127
-	}
-
-	if isWindows() {
-		cmd := exec.Command(bin, args...)
-		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
-				return exitErr.ExitCode()
-			}
-			fmt.Fprintln(os.Stderr, "refuse:", err.Error())
-			return 1
-		}
-		return 0
-	}
-
-	argv := append([]string{bin}, args...)
-	env := os.Environ()
-	if err := syscall.Exec(bin, argv, env); err != nil {
-		fmt.Fprintf(os.Stderr, "refuse: exec %s failed: %v\n", strings.Join(argv, " "), err)
-		return 1
-	}
-	return 0 // unreachable
-}
-
-func isWindows() bool {
-	return os.PathSeparator == '\\'
 }
