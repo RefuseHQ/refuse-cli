@@ -2,7 +2,7 @@
 
 # refuse-cli
 
-**Wraps `npm`, `pip`, `cargo`, `yarn`, `pnpm`, `gem`, `bun`, and `go` as a PATH shim — refuses to install packages with known CVEs.**
+**Wraps 18 package managers — `npm`, `pnpm`, `yarn`, `bun`, `npx`, `pip`, `pip3`, `uv`, `poetry`, `pipenv`, `pdm`, `pipx`, `cargo`, `gem`, `bundle`, `go`, `composer`, `dotnet` — as PATH shims, plus a Claude Code pre-tool-use hook. Refuses to install packages with known CVEs.**
 
 [![CI](https://github.com/RefuseHQ/refuse-cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/RefuseHQ/refuse-cli/actions/workflows/ci.yaml)
 [![Lint](https://github.com/RefuseHQ/refuse-cli/actions/workflows/lint.yaml/badge.svg)](https://github.com/RefuseHQ/refuse-cli/actions/workflows/lint.yaml)
@@ -140,7 +140,7 @@ Per env — re-run after creating a new venv. Set `REFUSE_NO_GATE=1` to bypass f
 | Agent | Status |
 | --- | --- |
 | Claude Code | ✓ supported |
-| Cursor | tracked in [#?](https://github.com/RefuseHQ/refuse-cli/issues) |
+| Cursor | tracked |
 | Continue | tracked |
 | Aider | tracked |
 | Codex CLI | tracked |
@@ -162,9 +162,15 @@ PRs welcome — see [`internal/hook/claudecode.go`](./internal/hook/claudecode.g
 | `refuse check-lockfile <path>` | Scan an entire lockfile |
 | `refuse audit [path]` | One-shot scan of every lockfile / Dockerfile / GH-Actions workflow under a directory |
 | `refuse gate` | The decision engine — shims + hooks call this on stdin |
+| `refuse pip-gate` | Variant of `refuse gate` for pip's argument grammar; invoked by the pip shim. |
 | `refuse config show \| set \| get` | Manage `~/.refuse/config.yaml` |
 | `refuse status` | Diagnose install state |
 | `refuse doctor` | Verify PATH / hooks / server reachability |
+
+```sh
+refuse audit                  # walk the repo, scan lockfiles + Dockerfiles + workflows
+refuse audit --json > out.json
+```
 
 ## Configuration
 
@@ -231,6 +237,8 @@ matter how a dep got there.
 
 Wire it into both ends of the pipeline:
 
+> **`refuse proxy` (preview)** — local HTTPS forward proxy that gates registry traffic for ecosystems the shim can't reach (Buildkit, isolated CI agents). Status: experimental. See [docs/design/registry-proxy.md](docs/design/registry-proxy.md).
+
 ### Pre-commit (local)
 
 Block a vulnerable lockfile from being committed in the first place. In
@@ -239,7 +247,7 @@ your project's `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/RefuseHQ/refuse-cli
-    rev: v1.2.3          # pin a refuse release
+    rev: <version>       # pin a refuse release — see https://github.com/RefuseHQ/refuse-cli/releases
     hooks:
       - id: refuse-check
       # Optional, heavier — only on push:
@@ -267,7 +275,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: RefuseHQ/refuse-cli@v1.2.3
+      - uses: RefuseHQ/refuse-cli@v1
         with:
           api-key: ${{ secrets.REFUSE_API_KEY }}
           # lockfiles: |       # optional override — auto-discovers if blank
@@ -276,8 +284,16 @@ jobs:
 ```
 
 Auto-discovers every supported lockfile in the workspace and fails the
-build on a vulnerable hit. Inputs: `server-url`, `api-key`, `lockfiles`,
-`version`, `severity`, `fail-on-error` — see [`action.yml`](./action.yml).
+build on a vulnerable hit. See [`action.yml`](./action.yml).
+
+| Input | Default | Required | Description |
+| --- | --- | --- | --- |
+| `server-url` | `https://mcp.refuse.dev` | no | refuse server URL (override for self-host). |
+| `api-key` | none | no | refuse API key (`rfs_...`). Required for hosted; optional for localhost self-host. |
+| `lockfiles` | auto-discover | no | Newline-separated list of lockfile paths. Auto-discovers common formats if empty. |
+| `version` | `latest` | no | refuse-cli version to install. |
+| `severity` | none | no | Severity floor (`low` \| `medium` \| `high` \| `critical`). |
+| `fail-on-error` | `true` | no | Fail the workflow on server/network errors. `false` falls through. |
 
 ### One-off / arbitrary scan
 
