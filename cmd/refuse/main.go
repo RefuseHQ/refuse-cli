@@ -17,6 +17,7 @@ import (
 
 func main() {
 	name := strings.ToLower(filepath.Base(os.Args[0]))
+	name = strings.TrimSuffix(name, ".exe")
 
 	// Shim mode — argv[0] looks like a package manager. Vet the call, then
 	// exec the real binary.
