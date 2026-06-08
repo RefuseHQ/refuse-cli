@@ -65,8 +65,13 @@ finally {
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if (-not ($userPath -split ';' | Where-Object { $_ -ieq $InstallDir })) {
     [Environment]::SetEnvironmentVariable('Path', "$userPath;$InstallDir", 'User')
-    Write-Host "refuse: added $InstallDir to user PATH (open a new terminal to pick it up)"
+    Write-Host "refuse: added $InstallDir to user PATH (new terminals will pick it up automatically)"
+}
+
+# Also update the current process PATH so this session can run `refuse` immediately.
+if (-not ($env:PATH -split ';' | Where-Object { $_ -ieq $InstallDir })) {
+    $env:PATH = "$env:PATH;$InstallDir"
 }
 
 Write-Host "refuse: installed $InstallDir\refuse.exe"
-Write-Host 'refuse: try `refuse --version` then `refuse init` (in a new terminal)'
+Write-Host 'refuse: PATH updated for this session — `refuse --version` and `refuse init` should work right now'
