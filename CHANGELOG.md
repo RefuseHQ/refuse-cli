@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.1...v1.3.2) (2026-06-08)
+
+
+### Bug Fixes
+
+* **install.ps1:** update $env:PATH in current session so refuse runs immediately ([#47](https://github.com/RefuseHQ/refuse-cli/issues/47)) ([c75c68f](https://github.com/RefuseHQ/refuse-cli/commit/c75c68ff0e168d1fcc298e6bcc5ac148536d78aa))
+* **install.sh:** write PATH export to shell rc so refuse runs after install ([#46](https://github.com/RefuseHQ/refuse-cli/issues/46)) ([5cf9df5](https://github.com/RefuseHQ/refuse-cli/commit/5cf9df566d7226276711be762ed5d4f8b13fcd6c))
+
 ## [Unreleased]
 
 ### Fixed
