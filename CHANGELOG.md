@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.2...v1.3.3) (2026-06-08)
+
+
+### Bug Fixes
+
+* **shim:** prevent libuv signal-handler race on Windows; cross-platform install hint ([#49](https://github.com/RefuseHQ/refuse-cli/issues/49)) ([b846f19](https://github.com/RefuseHQ/refuse-cli/commit/b846f19fb46270aefc8936cef7c991fc7b96de5b))
+
 ## [1.3.2](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.1...v1.3.2) (2026-06-08)
 
 
