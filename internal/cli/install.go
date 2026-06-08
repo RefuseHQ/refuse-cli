@@ -32,6 +32,9 @@ Pass --shims=npm,pip to scope.`,
 			for _, s := range res.Skipped {
 				fmt.Fprintf(cmd.OutOrStdout(), "  skipped: %s\n", s)
 			}
+			if len(res.LegacyRemoved) > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "  cleaned up legacy bare-name shims: %v\n", res.LegacyRemoved)
+			}
 			for _, p := range res.ShellRC {
 				fmt.Fprintf(cmd.OutOrStdout(), "  updated %s\n", p)
 			}
