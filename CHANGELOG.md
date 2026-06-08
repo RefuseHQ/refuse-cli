@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- **Shim no longer recurses through its own symlink.** `SelfDir()` resolved through the symlink and returned the dir of the real refuse binary (e.g. `/opt/homebrew/Caskroom/refuse/<version>`); `findReal` only skipped that dir, so when invoked via the canonical `~/.refuse/bin/<mgr>` symlink it would pick the shim itself as "real npm" and recurse. Visible symptoms: `--no-refuse` was stripped but the gate still fired on the recursive call; `pnpm build` / `go build` would hang. Fixed by skipping both the launched symlink dir and the resolved target dir, plus defence-in-depth against external symlinks pointing back at the refuse binary. ([#41](https://github.com/RefuseHQ/refuse-cli/pull/41))
+
 ## [1.3.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.0...v1.3.1) (2026-06-06)
 
 

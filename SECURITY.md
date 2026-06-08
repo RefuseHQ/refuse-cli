@@ -61,7 +61,7 @@ Then `shasum -a 256 -c checksums.txt` against the downloaded archive. SLSA build
 ## Out of scope
 
 - Reports against the upstream `refuse` server — those go to that [repo's SECURITY.md](https://github.com/RefuseHQ/refuse/blob/main/SECURITY.md).
-- Issues that require the user to deliberately set `REFUSE_FAIL_CLOSED=0` (the default), `REFUSE_ALLOW_VULNERABLE=1`, or otherwise disable the gate.
+- Issues that require the user to deliberately weaken the gate — leaving `REFUSE_FAIL_CLOSED` unset (the default fail-open behavior) or setting `REFUSE_FAIL_CLOSED=0`, setting `REFUSE_ALLOW_VULNERABLE=1`, or otherwise disabling the gate.
 - Findings against third-party dependencies that don't affect refuse-cli's behavior. Open a PR bumping the dep.
 
 ## Disclosure

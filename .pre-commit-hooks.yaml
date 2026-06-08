@@ -4,7 +4,7 @@
 #
 #   repos:
 #     - repo: https://github.com/RefuseHQ/refuse-cli
-#       rev: v1.2.3                     # pin a refuse release
+#       rev: v1                         # pin to the v1 major; see the Releases page for exact tags
 #       hooks:
 #         - id: refuse-check
 #
