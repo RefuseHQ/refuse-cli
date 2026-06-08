@@ -69,9 +69,39 @@ if (-not ($userPath -split ';' | Where-Object { $_ -ieq $InstallDir })) {
 }
 
 # Also update the current process PATH so this session can run `refuse` immediately.
+# Prepend so refuse shims win over machine-scope entries (e.g. Node from the MSI).
 if (-not ($env:PATH -split ';' | Where-Object { $_ -ieq $InstallDir })) {
-    $env:PATH = "$env:PATH;$InstallDir"
+    $env:PATH = "$InstallDir;$env:PATH"
+}
+
+# Patch the PowerShell profile so new terminals prepend ~/.refuse/bin too.
+# Windows builds effective PATH as machine_PATH;user_PATH, so user-scope alone
+# loses to machine-scope tools like Node. A profile-time prepend wins resolution.
+$profilePath = $PROFILE.CurrentUserAllHosts
+$profileDir = Split-Path -Parent $profilePath
+if (-not (Test-Path $profileDir)) {
+    New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+}
+if (-not (Test-Path $profilePath)) {
+    New-Item -ItemType File -Path $profilePath -Force | Out-Null
+}
+
+$marker = '# >>> refuse cli (managed) >>>'
+$existing = Get-Content -Raw -Path $profilePath -ErrorAction SilentlyContinue
+if (-not ($existing -and $existing.Contains($marker))) {
+    $block = @"
+
+$marker
+`$env:PATH = "$InstallDir;`$env:PATH"
+# <<< refuse cli (managed) <<<
+"@
+    Add-Content -Path $profilePath -Value $block
+    Write-Host "refuse: patched PowerShell profile at $profilePath"
+} else {
+    Write-Host "refuse: PowerShell profile already patched at $profilePath"
 }
 
 Write-Host "refuse: installed $InstallDir\refuse.exe"
-Write-Host 'refuse: PATH updated for this session — `refuse --version` and `refuse init` should work right now'
+Write-Host 'refuse: PATH updated for this session — `refuse --version` and `refuse init` work right now'
+Write-Host "refuse: PowerShell profile patched (`$PROFILE.CurrentUserAllHosts) — new terminals will prepend ~/.refuse/bin automatically"
+Write-Host 'refuse: (this is needed because Windows builds PATH as machine;user, so tools like Node installed at machine scope would otherwise win over the refuse shims)'
