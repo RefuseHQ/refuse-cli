@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.3...v1.3.4) (2026-06-08)
+
+
+### Bug Fixes
+
+* **shim:** windows shims now intercept package managers ([#51](https://github.com/RefuseHQ/refuse-cli/issues/51)) ([c2621a4](https://github.com/RefuseHQ/refuse-cli/commit/c2621a4e3527f95d88a3a6ece2bb883f90db910f))
+
 ## [1.3.3](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.2...v1.3.3) (2026-06-08)
 
 
