@@ -56,7 +56,17 @@ echo "refuse: verifying checksum"
 curl -sSfL "$SUMS_URL" -o "$TMP/checksums.txt"
 EXPECTED=$(awk -v f="refuse_${OS}_${ARCH}.${EXT}" '$2==f{print $1}' "$TMP/checksums.txt")
 [ -z "$EXPECTED" ] && { echo "checksum line for refuse_${OS}_${ARCH}.${EXT} not found" >&2; exit 1; }
-ACTUAL=$(shasum -a 256 "$TMP/refuse.$EXT" | cut -d ' ' -f 1)
+# Prefer `sha256sum` (coreutils — preinstalled on Debian/Ubuntu/Alpine/RHEL
+# minimal images) over `shasum` (Perl, requires apt-get install perl on slim
+# images). Fall back to `shasum -a 256` for macOS, which only ships shasum.
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL=$(sha256sum "$TMP/refuse.$EXT" | cut -d ' ' -f 1)
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL=$(shasum -a 256 "$TMP/refuse.$EXT" | cut -d ' ' -f 1)
+else
+  echo "neither sha256sum nor shasum found; cannot verify the release" >&2
+  exit 1
+fi
 if [ "$EXPECTED" != "$ACTUAL" ]; then
   echo "checksum mismatch: expected $EXPECTED got $ACTUAL" >&2
   exit 1
