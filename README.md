@@ -39,13 +39,13 @@ Works:
 brew install refusehq/tap/refuse
 ```
 
-**Direct binary on macOS / Linux** (with sha256 checksum verification):
+**Direct binary on macOS / Linux**:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
 ```
 
-**Direct binary on Windows** (PowerShell, with sha256 checksum verification):
+**Direct binary on Windows** (PowerShell):
 
 ```powershell
 irm https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.ps1 | iex
@@ -56,8 +56,6 @@ irm https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.p
 ```sh
 go install github.com/RefuseHQ/refuse-cli/cmd/refuse@latest
 ```
-
-Verified releases are [cosign-signed](https://github.com/sigstore/cosign) with SLSA build provenance — see [SECURITY.md](./SECURITY.md) for the verification command.
 
 **Platforms.** Pre-built binaries are published for:
 
@@ -109,21 +107,6 @@ refuse config set server_url http://localhost:8080
 ```
 
 The server ingests OSV, CISA KEV, FIRST EPSS, GHSA, deps.dev, and Wolfi; first-boot bootstrap takes ~3 min, then deltas every 5 min. `GET /readyz` flips from 503 to 200 when the seed completes. Both editions speak the same `/api/v1/check/*` API, so switching between hosted and self-host is a one-line config change.
-
-## Closing the `python -m pip` bypass
-
-The PATH shim doesn't catch `python -m pip install …` because it's a module invocation, not a binary on PATH. `refuse python-hook install` drops a `.pth` + small Python module into a Python env's site-packages; Python processes `.pth` files at interpreter startup and the module monkey-patches pip's `InstallCommand` to first shell out to `refuse pip-gate <args>`.
-
-```sh
-refuse python-hook install                     # current python3 on PATH
-refuse python-hook install --python=$(pwd)/.venv/bin/python   # specific env
-refuse python-hook status                      # show whether the hook is active
-refuse python-hook uninstall
-```
-
-After installing, `python -m pip install pyyaml==5.3` is blocked the same way `pip install pyyaml==5.3` is. The hook fails open on any transient refuse error, so unrelated Python tooling isn't broken if the server's unreachable.
-
-Per env — re-run after creating a new venv. Set `REFUSE_NO_GATE=1` to bypass for a single invocation.
 
 ## Supported package managers
 
