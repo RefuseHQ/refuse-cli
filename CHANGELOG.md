@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.5...v1.3.6) (2026-06-10)
+
+
+### Bug Fixes
+
+* **install:** prefer sha256sum, fall back to shasum on macOS ([#55](https://github.com/RefuseHQ/refuse-cli/issues/55)) ([d38a156](https://github.com/RefuseHQ/refuse-cli/commit/d38a156fada93e8b9ce9530bde49beb18cf341e8))
+
 ## [1.3.5](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.4...v1.3.5) (2026-06-08)
 
 
