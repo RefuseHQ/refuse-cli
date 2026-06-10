@@ -313,10 +313,6 @@ pip freeze | refuse check-lockfile --filename=requirements.txt /dev/stdin
 | **[refuse](https://github.com/RefuseHQ/refuse)** | Self-hostable HTTP server | You want to run your own backend |
 | **[refuse.dev](https://refuse.dev)** | Hosted service | You don't want to run anything; sign up and point the CLI at it |
 
-## Status
-
-Alpha. The gate is production-ready; some convenience subcommands are still being filled in. See [ROADMAP.md](./ROADMAP.md) and open issues for the path to 0.1.0.
-
 ## Contributing
 
 PRs welcome — particularly for new package managers, agent hooks, and platforms. See [CONTRIBUTING.md](./CONTRIBUTING.md).
