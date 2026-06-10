@@ -2,40 +2,35 @@
 
 For the latest, see [milestones](https://github.com/RefuseHQ/refuse-cli/milestones) and the [project board](https://github.com/orgs/RefuseHQ/projects). Dates intentionally absent.
 
-## Status: Alpha
-
-The gate is the production-ready piece. Most other subcommands (`refuse init`, `refuse install`, `refuse hook install`) are wired up but thin — some still print "not yet implemented" for edge cases. Use at your own risk and please file issues.
-
 ## Recently shipped
 
-- [x] Cosign-signed release binaries + checksums.
-- [x] SLSA build provenance attestation.
-- [x] golangci-lint configuration and CI step.
-- [x] Cross-platform build matrix (GoReleaser).
+- [x] All CLI subcommands wired up: `refuse init`, `install`, `uninstall`, `hook install/remove/list`, `allowlist add/remove/list`, `check`, `check-lockfile`, `audit`, `gate`, `pip-gate`, `python-hook install/status/uninstall`, `config show/set/get`, `status`, `doctor`.
+- [x] `refuse doctor` inspects the environment — PATH, shim resolution, server reachability, hook presence.
+- [x] Project-level allowlist via `.refuse.yaml` (`refuse allowlist add <CVE-ID>`).
+- [x] Extended manager coverage to 18: `npm`, `pnpm`, `yarn`, `bun`, `npx`, `pip`, `pip3`, `uv`, `poetry`, `pipenv`, `pdm`, `pipx`, `cargo`, `gem`, `bundle`, `go`, `composer`, `dotnet`.
+- [x] Self-hostable server ([RefuseHQ/refuse](https://github.com/RefuseHQ/refuse)) — bulk first-boot seed (~3 min) + parallel per-tick deltas. Image at `ghcr.io/refusehq/refuse`.
+- [x] First-class Windows support — PATHEXT-aware shim resolution, libuv-safe SIGINT handling, PowerShell profile install path, hardlink fallback.
+- [x] GitHub Actions composite action ([action.yml](./action.yml)) + pre-commit hooks (`refuse-check`, `refuse-check-installed-pip`).
+- [x] Cosign-signed release binaries + SLSA build provenance + sha256 checksums.
+- [x] golangci-lint + cross-platform build matrix (GoReleaser).
 - [x] Homebrew tap.
+- [x] `refuse python-hook` to close the `python -m pip` / `uv pip` / `conda install` bypass.
 
-## Near-term — towards 0.1.0
+## In progress
 
-- [ ] Finish all the CLI stubs: `refuse init`, `refuse install`, `refuse uninstall`, `refuse hook install/remove/list`, `refuse check`, `refuse check-lockfile`, `refuse status`, `refuse doctor`.
-- [ ] `refuse doctor` actually inspects the environment (PATH, shim resolution, server reachability, hook presence).
-- [ ] Better block message — multi-line, colored, with copy-paste upgrade command.
-- [ ] Test coverage thresholds in CI (fail under 70%).
+- [ ] **More agent hooks**: Cursor, Continue, Aider, Cline, Codex CLI. Claude Code is the reference implementation; the others are tracked.
+- [ ] **`refuse explain <pkg>`** — full advisory + suggested upgrade with diff against current version.
+- [ ] **Lockfile diff mode** — `refuse check-lockfile --diff` to scan only added or upgraded entries.
+- [ ] **Container image** — `ghcr.io/refusehq/refuse-cli` so CI jobs can drop in the CLI without `install.sh`.
+- [ ] **Block-message polish** — multi-line, colored, with a copy-paste upgrade command.
+- [ ] **Test coverage gate** in CI (fail under 70%).
 
-## Medium-term — towards 0.2.0
+## Towards 1.0
 
-- [ ] **More agent hooks**: Cursor, Continue, Aider, Cline, Codex.
-- [ ] **More managers**: poetry, uv, pipenv, mise, asdf.
-- [ ] **`refuse explain <pkg>`** — print the full advisory + suggested upgrade with diff against current version.
-- [ ] **Lockfile diff mode** — `refuse check-lockfile package-lock.json` should accept `--diff` to scan only added/upgraded entries.
-- [ ] **Project-level allowlist** — `.refuse.yaml` can pin specific advisories to "acknowledged" if a team has decided to live with one.
-- [ ] **Container image** — `ghcr.io/refusehq/refuse-cli`, useful for CI jobs that don't want to install via brew or install.sh.
-
-## Longer-term — towards 1.0
-
-- [ ] Stable CLI surface. Today subcommands and flag names may still change.
-- [ ] Stable hook contract — a documented JSON shape that any agent can adopt, not just Claude Code.
-- [ ] First-party Windows support (currently tier 2 — releases ship, but day-to-day testing is on macOS/Linux).
+- [ ] Stable CLI surface — subcommand and flag names locked.
+- [ ] Stable hook contract — documented JSON shape any agent can adopt, not just Claude Code.
 - [ ] Distro packages: `apt`, `dnf`, `pacman`, `apk`.
+- [ ] `mise` and `asdf` shim integration.
 - [ ] LTS branch once 1.0 ships.
 
 ## Out of scope

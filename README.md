@@ -39,13 +39,13 @@ Works:
 brew install refusehq/tap/refuse
 ```
 
-**Direct binary on macOS / Linux** (with sha256 checksum verification):
+**Direct binary on macOS / Linux**:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.sh | sh
 ```
 
-**Direct binary on Windows** (PowerShell, with sha256 checksum verification):
+**Direct binary on Windows** (PowerShell):
 
 ```powershell
 irm https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.ps1 | iex
@@ -56,8 +56,6 @@ irm https://raw.githubusercontent.com/RefuseHQ/refuse-cli/main/scripts/install.p
 ```sh
 go install github.com/RefuseHQ/refuse-cli/cmd/refuse@latest
 ```
-
-Verified releases are [cosign-signed](https://github.com/sigstore/cosign) with SLSA build provenance — see [SECURITY.md](./SECURITY.md) for the verification command.
 
 **Platforms.** Pre-built binaries are published for:
 
@@ -88,39 +86,27 @@ cargo add tokio
 
 If the install is clean, it goes through. If it isn't, refuse blocks it and tells you why.
 
-## How it works
+## Server
 
-```mermaid
-flowchart LR
-    USER[Developer] -->|"npm install …"| SHIM[refuse-cli<br/>aliased as 'npm']
-    AGENT[Coding agent] -->|PreToolUse hook| GATE[refuse gate]
-    SHIM --> PARSE[parser]
-    GATE --> PARSE
-    PARSE -->|"(eco, name, ver)"| DECIDE[decide]
-    DECIDE -->|HTTP| SERVER[(refuse server)]
-    SERVER -->|verdict| DECIDE
-    DECIDE -->|allow| REAL[real binary]
-    DECIDE -->|block exit 2| FAIL[stderr]
-```
+The CLI is the gate; the server is the brain. Two ways to bring up a backend — pick either:
 
-A single Go binary, symlinked into `~/.refuse/bin/` under each manager's name. When `npm` is invoked, the shim parses the argv, asks the server, and either `exec`s the real `npm` on PATH or exits with code 2 and a message.
-
-For details, see [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-### Closing the `python -m pip` bypass
-
-The PATH shim doesn't catch `python -m pip install …` because it's a module invocation, not a binary on PATH. `refuse python-hook install` drops a `.pth` + small Python module into a Python env's site-packages; Python processes `.pth` files at interpreter startup and the module monkey-patches pip's `InstallCommand` to first shell out to `refuse pip-gate <args>`.
+**Hosted** ([refuse.dev](https://refuse.dev))
 
 ```sh
-refuse python-hook install                     # current python3 on PATH
-refuse python-hook install --python=$(pwd)/.venv/bin/python   # specific env
-refuse python-hook status                      # show whether the hook is active
-refuse python-hook uninstall
+refuse config set server_url https://mcp.refuse.dev
+refuse config set api_key rfs_...
 ```
 
-After installing, `python -m pip install pyyaml==5.3` is blocked the same way `pip install pyyaml==5.3` is. The hook fails open on any transient refuse error, so unrelated Python tooling isn't broken if the server's unreachable.
+**Self-hosted** ([RefuseHQ/refuse](https://github.com/RefuseHQ/refuse) — Apache-2.0, single Docker container, no signup)
 
-Per env — re-run after creating a new venv. Set `REFUSE_NO_GATE=1` to bypass for a single invocation.
+```sh
+docker run -d --name refuse -p 8080:8080 \
+  -v refuse-data:/data \
+  ghcr.io/refusehq/refuse:latest
+refuse config set server_url http://localhost:8080
+```
+
+The server ingests OSV, CISA KEV, FIRST EPSS, GHSA, deps.dev, and Wolfi; first-boot bootstrap takes ~3 min, then deltas every 5 min. `GET /readyz` flips from 503 to 200 when the seed completes. Both editions speak the same `/api/v1/check/*` API, so switching between hosted and self-host is a one-line config change.
 
 ## Supported package managers
 
@@ -211,22 +197,6 @@ Equivalent to a one-shot `REFUSE_NO_GATE=1`, but inline. This only works
 through the PATH shim (interactive use) — the agent PreToolUse hook
 ignores it, so an autonomous agent can't bypass its own gate.
 
-## Pointing at a server
-
-**Hosted ([refuse.dev](https://refuse.dev))**:
-
-```sh
-refuse config set server_url https://mcp.refuse.dev
-refuse config set api_key rfs_...
-```
-
-**Self-hosted ([RefuseHQ/refuse](https://github.com/RefuseHQ/refuse))**:
-
-```sh
-docker run --rm -p 8080:8080 ghcr.io/refusehq/refuse:latest
-refuse config set server_url http://localhost:8080
-```
-
 ## Enforcement layer — pre-commit + CI
 
 The PATH shim is a convenient first line, but anything that bypasses it
@@ -304,18 +274,6 @@ refuse check-lockfile package-lock.json
 # Scan currently-installed pip set (catches `python -m pip` / conda)
 pip freeze | refuse check-lockfile --filename=requirements.txt /dev/stdin
 ```
-
-## How it relates to the other refuse projects
-
-| | What it is | When to use it |
-| --- | --- | --- |
-| **[refuse-cli](https://github.com/RefuseHQ/refuse-cli)** (this) | PATH shim in front of package managers | You want to block installs before they happen, on a laptop / CI / Docker build |
-| **[refuse](https://github.com/RefuseHQ/refuse)** | Self-hostable HTTP server | You want to run your own backend |
-| **[refuse.dev](https://refuse.dev)** | Hosted service | You don't want to run anything; sign up and point the CLI at it |
-
-## Status
-
-Alpha. The gate is production-ready; some convenience subcommands are still being filled in. See [ROADMAP.md](./ROADMAP.md) and open issues for the path to 0.1.0.
 
 ## Contributing
 
