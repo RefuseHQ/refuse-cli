@@ -159,10 +159,10 @@ func renderRateLimited(rate *server.RateLimitedError, blocked bool) string {
 		if days < 0 {
 			days = 0
 		}
-		b.WriteString(fmt.Sprintf(" (resets %s, %d %s)",
+		fmt.Fprintf(&b, " (resets %s, %d %s)",
 			rate.PeriodEnd.Format("Jan 2"),
 			days,
-			pluralize(days, "day", "days")))
+			pluralize(days, "day", "days"))
 	}
 	if rate.UpgradeURL != "" {
 		b.WriteString("\n        upgrade: ")
