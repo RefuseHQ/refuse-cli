@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.6...v1.4.0) (2026-06-11)
+
+
+### Features
+
+* **gate:** rich, actionable message when the account quota hits 429 ([#60](https://github.com/RefuseHQ/refuse-cli/issues/60)) ([30776bb](https://github.com/RefuseHQ/refuse-cli/commit/30776bb025e96d559229353bbbb850e2a959eab7))
+
 ## [1.3.6](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.5...v1.3.6) (2026-06-10)
 
 
