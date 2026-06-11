@@ -3,10 +3,12 @@ package gate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/RefuseHQ/refuse-cli/internal/config"
 	"github.com/RefuseHQ/refuse-cli/internal/parsers"
@@ -119,6 +121,95 @@ func TestGateFailClosedOnServerError(t *testing.T) {
 	})
 	if res.Decision != DecisionBlock {
 		t.Errorf("expected fail-closed (block), got allow")
+	}
+}
+
+// quotaServer returns a server whose POSTs all 429 with a quota body shaped
+// like mcp.refuse.dev's. periodEnd is rendered fresh on each call so the
+// "resets in N days" math always reads sensibly relative to the test's
+// wall clock.
+func quotaServer(t *testing.T, used, limit int64, plan string, periodEnd time.Time, upgrade string) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		fmt.Fprintf(w, `{
+			"error":"Quota exceeded",
+			"quota":{"used":%d,"limit":%d,"plan":%q,"period":"2026-05-28","period_end":%q},
+			"upgrade":%q
+		}`, used, limit, plan, periodEnd.Format(time.RFC3339), upgrade)
+	}))
+}
+
+func TestGateRateLimitMessage_FailOpen(t *testing.T) {
+	resetAt := time.Now().Add(16 * 24 * time.Hour)
+	srv := quotaServer(t, 100_000, 100_000, "free", resetAt, "https://refuse.dev/pricing")
+	defer srv.Close()
+
+	eng := Engine{Client: server.New(srv.URL, ""), Policy: config.Policy{SeverityThreshold: "high"}}
+	res := eng.Decide(context.Background(), parsers.ParseResult{
+		IsInstall: true, Mode: parsers.ModeDirect,
+		Packages: []parsers.PkgRef{{Ecosystem: "npm", Name: "x", Version: "1.0.0"}},
+	})
+	if res.Decision != DecisionAllow {
+		t.Fatalf("expected DecisionAllow, got %v", res.Decision)
+	}
+	must := func(s string) {
+		t.Helper()
+		if !strings.Contains(res.Message, s) {
+			t.Errorf("message missing %q\n--- got ---\n%s", s, res.Message)
+		}
+	}
+	must("refuse: rate limited")
+	must("account quota 100,000/100,000 used")
+	must("https://refuse.dev/pricing")
+	must("REFUSE_FAIL_CLOSED=1 to block")
+	if strings.Contains(res.Message, "fail-open") || strings.Contains(res.Message, "fail-closed") {
+		t.Errorf("avoid jargon in the rendered message\n--- got ---\n%s", res.Message)
+	}
+}
+
+func TestGateRateLimitMessage_FailClosed(t *testing.T) {
+	resetAt := time.Now().Add(2 * 24 * time.Hour)
+	srv := quotaServer(t, 5_000, 5_000, "free", resetAt, "")
+	defer srv.Close()
+
+	eng := Engine{Client: server.New(srv.URL, ""), Policy: config.Policy{SeverityThreshold: "high", FailClosed: true}}
+	res := eng.Decide(context.Background(), parsers.ParseResult{
+		IsInstall: true, Mode: parsers.ModeDirect,
+		Packages: []parsers.PkgRef{{Ecosystem: "npm", Name: "x", Version: "1.0.0"}},
+	})
+	if res.Decision != DecisionBlock {
+		t.Fatalf("expected DecisionBlock under fail-closed, got %v", res.Decision)
+	}
+	if !strings.Contains(res.Message, "install blocked") {
+		t.Errorf("expected 'install blocked' in message:\n%s", res.Message)
+	}
+	// No upgrade URL was supplied — message shouldn't make one up.
+	if strings.Contains(res.Message, "https://") {
+		t.Errorf("message synthesized an upgrade URL the server didn't return:\n%s", res.Message)
+	}
+}
+
+func TestGateRateLimit_FallbackWhenNoBody(t *testing.T) {
+	// Some 429s come from upstream proxies with no quota body — we should
+	// still fall back to the plain "rate limited" message and fail-open
+	// without crashing.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer srv.Close()
+
+	eng := Engine{Client: server.New(srv.URL, ""), Policy: config.Policy{SeverityThreshold: "high"}}
+	res := eng.Decide(context.Background(), parsers.ParseResult{
+		IsInstall: true, Mode: parsers.ModeDirect,
+		Packages: []parsers.PkgRef{{Ecosystem: "npm", Name: "x", Version: "1.0.0"}},
+	})
+	if res.Decision != DecisionAllow {
+		t.Fatalf("expected DecisionAllow on bodyless 429, got %v", res.Decision)
+	}
+	if !strings.Contains(res.Message, "rate limited") {
+		t.Errorf("expected 'rate limited' in fallback message:\n%s", res.Message)
 	}
 }
 
