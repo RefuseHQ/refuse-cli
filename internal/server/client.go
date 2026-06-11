@@ -48,8 +48,38 @@ func New(baseURL, apiKey string) *Client {
 // ErrUnauthorized is returned on a 401 from the server (missing or invalid key).
 var ErrUnauthorized = errors.New("server: unauthorized")
 
-// ErrRateLimited is returned on a 429.
+// ErrRateLimited is returned on a 429. When the server provided a parseable
+// quota body, a *RateLimitedError is returned instead — it unwraps to this
+// sentinel so existing `errors.Is(err, ErrRateLimited)` checks keep working
+// while richer callers can `errors.As` to extract used/limit/reset details.
 var ErrRateLimited = errors.New("server: rate limited")
+
+// RateLimitedError wraps ErrRateLimited with the per-account quota
+// information mcp.refuse.dev returns alongside its 429 response. The body
+// looks like:
+//
+//	{ "error": "Quota exceeded",
+//	  "quota": { "used": …, "limit": …, "period": "YYYY-MM-DD",
+//	             "period_end": "ISO-8601", "plan": "free" },
+//	  "upgrade": "https://refuse.dev/pricing" }
+//
+// When the response is empty or malformed we fall back to the plain
+// ErrRateLimited so callers always know they hit a rate limit.
+type RateLimitedError struct {
+	Used       int64
+	Limit      int64
+	Plan       string
+	Period     string    // YYYY-MM-DD cycle start
+	PeriodEnd  time.Time // zero if the server didn't send a usable date
+	UpgradeURL string    // empty when none was offered (e.g. Pro users)
+}
+
+// Error implements error. The message intentionally omits "server: " so it
+// renders naturally when callers prepend their own prefix ("refuse: %v").
+func (e *RateLimitedError) Error() string { return "rate limited" }
+
+// Unwrap lets `errors.Is(err, ErrRateLimited)` see through this wrapper.
+func (e *RateLimitedError) Unwrap() error { return ErrRateLimited }
 
 // ErrServerUnreachable is returned on connection / timeout errors.
 var ErrServerUnreachable = errors.New("server: unreachable")
@@ -115,8 +145,52 @@ func (c *Client) post(ctx context.Context, path string, in any, out any) error {
 	case http.StatusUnauthorized:
 		return ErrUnauthorized
 	case http.StatusTooManyRequests:
+		body, _ := io.ReadAll(resp.Body)
+		if re := parseRateLimitBody(body); re != nil {
+			return re
+		}
 		return ErrRateLimited
 	}
 	b, _ := io.ReadAll(resp.Body)
 	return fmt.Errorf("server: %d %s: %s", resp.StatusCode, resp.Status, string(b))
+}
+
+// parseRateLimitBody pulls the structured quota info out of mcp.refuse.dev's
+// 429 body. Returns nil when the body is missing, unparseable, or doesn't
+// look like a quota response — callers should fall back to ErrRateLimited.
+func parseRateLimitBody(body []byte) *RateLimitedError {
+	if len(body) == 0 {
+		return nil
+	}
+	var payload struct {
+		Quota struct {
+			Used      int64  `json:"used"`
+			Limit     int64  `json:"limit"`
+			Plan      string `json:"plan"`
+			Period    string `json:"period"`
+			PeriodEnd string `json:"period_end"`
+		} `json:"quota"`
+		Upgrade string `json:"upgrade"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil
+	}
+	// A response with no `limit` isn't a quota body — could be a generic
+	// 429 from a different middleware (Cloudflare, an upstream proxy, etc).
+	if payload.Quota.Limit == 0 {
+		return nil
+	}
+	out := &RateLimitedError{
+		Used:       payload.Quota.Used,
+		Limit:      payload.Quota.Limit,
+		Plan:       payload.Quota.Plan,
+		Period:     payload.Quota.Period,
+		UpgradeURL: payload.Upgrade,
+	}
+	if payload.Quota.PeriodEnd != "" {
+		if t, err := time.Parse(time.RFC3339, payload.Quota.PeriodEnd); err == nil {
+			out.PeriodEnd = t
+		}
+	}
+	return out
 }

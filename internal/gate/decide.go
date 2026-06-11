@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -98,6 +99,26 @@ func (e Engine) Decide(ctx context.Context, p parsers.ParseResult) Result {
 }
 
 func (e Engine) failOpenOrClosed(err error) Result {
+	// Rate-limit errors carry structured quota info on the hosted backend.
+	// Render those specially in both fail-open and fail-closed modes — the
+	// raw "server: rate limited" line is technically correct but useless
+	// at the terminal.
+	var rate *server.RateLimitedError
+	if errors.As(err, &rate) {
+		if e.Policy.FailClosed {
+			return Result{
+				Decision:    DecisionBlock,
+				Message:     renderRateLimited(rate, true),
+				ServerError: err,
+			}
+		}
+		return Result{
+			Decision:    DecisionAllow,
+			Message:     renderRateLimited(rate, false),
+			ServerError: err,
+		}
+	}
+
 	if e.Policy.FailClosed {
 		return Result{
 			Decision:    DecisionBlock,
@@ -109,6 +130,8 @@ func (e Engine) failOpenOrClosed(err error) Result {
 	if errors.Is(err, server.ErrServerUnreachable) {
 		hint = " (set REFUSE_FAIL_CLOSED=1 to require gate)"
 	} else if errors.Is(err, server.ErrRateLimited) {
+		// Hit only when the server returned a 429 with no parseable body
+		// (older self-hosted versions, upstream 429 from a proxy).
 		hint = " — rate limited, allowing install (upgrade plan to raise the limit)"
 	} else if errors.Is(err, server.ErrUnauthorized) {
 		hint = " — set REFUSE_API_KEY or run `refuse init`"
@@ -118,6 +141,74 @@ func (e Engine) failOpenOrClosed(err error) Result {
 		Message:     fmt.Sprintf("refuse: %v%s", err, hint),
 		ServerError: err,
 	}
+}
+
+// renderRateLimited formats a rich, multi-line message for a 429 from the
+// hosted backend. Includes used/limit, reset window, optional upgrade URL,
+// and the action knob (REFUSE_FAIL_CLOSED) so the user can change behavior
+// without reading docs.
+func renderRateLimited(rate *server.RateLimitedError, blocked bool) string {
+	var b strings.Builder
+	b.WriteString("refuse: rate limited — account quota ")
+	b.WriteString(formatThousands(rate.Used))
+	b.WriteString("/")
+	b.WriteString(formatThousands(rate.Limit))
+	b.WriteString(" used")
+	if !rate.PeriodEnd.IsZero() {
+		days := int(time.Until(rate.PeriodEnd).Hours() / 24)
+		if days < 0 {
+			days = 0
+		}
+		fmt.Fprintf(&b, " (resets %s, %d %s)",
+			rate.PeriodEnd.Format("Jan 2"),
+			days,
+			pluralize(days, "day", "days"))
+	}
+	if rate.UpgradeURL != "" {
+		b.WriteString("\n        upgrade: ")
+		b.WriteString(rate.UpgradeURL)
+	}
+	if blocked {
+		b.WriteString("\n        install blocked (REFUSE_FAIL_CLOSED=1)")
+	} else {
+		b.WriteString("\n        install allowed — set REFUSE_FAIL_CLOSED=1 to block on rate limit")
+	}
+	return b.String()
+}
+
+// formatThousands turns 100000 into "100,000". Avoids pulling in
+// golang.org/x/text just for this.
+func formatThousands(n int64) string {
+	if n < 0 {
+		return "-" + formatThousands(-n)
+	}
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+	// Walk back-to-front inserting commas every 3 digits.
+	out := make([]byte, 0, len(s)+(len(s)-1)/3)
+	first := len(s) % 3
+	if first > 0 {
+		out = append(out, s[:first]...)
+		if len(s) > first {
+			out = append(out, ',')
+		}
+	}
+	for i := first; i < len(s); i += 3 {
+		out = append(out, s[i:i+3]...)
+		if i+3 < len(s) {
+			out = append(out, ',')
+		}
+	}
+	return string(out)
+}
+
+func pluralize(n int, singular, plural string) string {
+	if n == 1 {
+		return singular
+	}
+	return plural
 }
 
 func renderBlock(resp server.BatchCheckResponse) string {
