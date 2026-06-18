@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.2](https://github.com/RefuseHQ/refuse-cli/compare/v1.4.1...v1.4.2) (2026-06-18)
+
+
+### Bug Fixes
+
+* **install:** align shell-rc marker so uninstall fully cleans up ([#65](https://github.com/RefuseHQ/refuse-cli/issues/65)) ([d0b346b](https://github.com/RefuseHQ/refuse-cli/commit/d0b346b5bfac3c56ecc556b3fbfe9792568d8079))
+* **shim:** relink dangling shims instead of failing with 'file exists' ([#64](https://github.com/RefuseHQ/refuse-cli/issues/64)) ([63893db](https://github.com/RefuseHQ/refuse-cli/commit/63893db436984fb0a0119d3c8fb58625aab76dcd))
+
 ## [1.4.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.4.0...v1.4.1) (2026-06-18)
 
 
