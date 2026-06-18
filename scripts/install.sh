@@ -116,8 +116,11 @@ echo "refuse: installed $INSTALL_DIR/refuse"
 patch_rc() {
   rc=$1
   [ -e "$rc" ] || return 0
-  marker_begin="# >>> refuse cli (managed) >>>"
-  marker_end="# <<< refuse cli (managed) <<<"
+  # Must match internal/shim/shellrc.go's canonical marker exactly, so that a
+  # later `refuse install` rewrites this block in place (instead of stacking a
+  # second one) and `refuse uninstall` removes it.
+  marker_begin="# >>> refuse shim (managed) >>>"
+  marker_end="# <<< refuse shim (managed) <<<"
   # Skip if already patched (idempotent re-installs).
   if grep -qF "$marker_begin" "$rc" 2>/dev/null; then
     return 0
