@@ -3,6 +3,7 @@ package shim
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -16,6 +17,13 @@ import (
 // follows the link and errors on a broken one), so the stale link was never
 // cleared before os.Symlink.
 func TestInstallReplacesDanglingShim(t *testing.T) {
+	// Shims are symlinks only on unix; on Windows createShim uses a
+	// hardlink/copy (and an extension), so the dangling-symlink scenario and
+	// these EvalSymlinks assertions don't apply.
+	if runtime.GOOS == "windows" {
+		t.Skip("shim relink test is unix-specific (windows shims are not symlinks)")
+	}
+
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("REFUSE_HOME", "") // force the HOME-derived ~/.refuse path
