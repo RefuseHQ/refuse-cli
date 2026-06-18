@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/RefuseHQ/refuse-cli/compare/v1.4.0...v1.4.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **install:** robust latest-version resolution + clearer PATH activation ([#62](https://github.com/RefuseHQ/refuse-cli/issues/62)) ([83352ff](https://github.com/RefuseHQ/refuse-cli/commit/83352ff7fad82e67bc20e334df76d4830e1b1f07))
+
 ## [1.4.0](https://github.com/RefuseHQ/refuse-cli/compare/v1.3.6...v1.4.0) (2026-06-11)
 
 
