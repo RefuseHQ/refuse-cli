@@ -37,10 +37,35 @@ ARCH=$(uname_arch)
 EXT=tar.gz
 [ "$OS" = windows ] && EXT=zip
 
+# Resolve the latest version. Primary path follows the github.com
+# /releases/latest redirect (served from the web/CDN, NOT the 60-req/hr
+# unauthenticated api.github.com), which is far less likely to rate-limit or
+# 5xx during a traffic spike. Falls back to the JSON API if the redirect
+# can't be read, and retries transient failures before giving up.
+resolve_latest() {
+  v=$(curl -fsSL -I -o /dev/null -w '%{url_effective}' \
+        "https://github.com/$REPO/releases/latest" 2>/dev/null \
+        | sed -E 's#.*/tag/v?##' | tr -d '[:space:]')
+  [ -n "$v" ] && { echo "$v"; return 0; }
+  curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+    | grep -E '"tag_name":' | head -n1 | sed -E 's/.*"v?([^"]+)".*/\1/'
+}
+
 if [ "$VERSION" = latest ]; then
-  VERSION=$(curl -sSfL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep -E '"tag_name":' | head -n1 | sed -E 's/.*"v?([^"]+)".*/\1/')
-  [ -z "$VERSION" ] && { echo "could not resolve latest version" >&2; exit 1; }
+  i=1
+  while [ "$i" -le 3 ]; do
+    VERSION=$(resolve_latest)
+    [ -n "$VERSION" ] && break
+    echo "refuse: version lookup failed (attempt $i/3), retrying..." >&2
+    sleep 2
+    i=$((i + 1))
+  done
+  if [ -z "$VERSION" ]; then
+    echo "could not resolve latest version" >&2
+    echo "GitHub may be having a transient issue — retry shortly, or pin a version:" >&2
+    echo "  curl -fsSL https://raw.githubusercontent.com/$REPO/main/scripts/install.sh | REFUSE_VERSION=1.4.0 sh" >&2
+    exit 1
+  fi
 fi
 
 URL="https://github.com/$REPO/releases/download/v$VERSION/refuse_${OS}_${ARCH}.${EXT}"
@@ -50,10 +75,10 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 echo "refuse: downloading $URL"
-curl -sSfL "$URL" -o "$TMP/refuse.$EXT"
+curl -sSfL --retry 3 --retry-delay 1 "$URL" -o "$TMP/refuse.$EXT"
 
 echo "refuse: verifying checksum"
-curl -sSfL "$SUMS_URL" -o "$TMP/checksums.txt"
+curl -sSfL --retry 3 --retry-delay 1 "$SUMS_URL" -o "$TMP/checksums.txt"
 EXPECTED=$(awk -v f="refuse_${OS}_${ARCH}.${EXT}" '$2==f{print $1}' "$TMP/checksums.txt")
 [ -z "$EXPECTED" ] && { echo "checksum line for refuse_${OS}_${ARCH}.${EXT} not found" >&2; exit 1; }
 # Prefer `sha256sum` (coreutils — preinstalled on Debian/Ubuntu/Alpine/RHEL
@@ -107,18 +132,26 @@ patch_rc() {
 }
 
 case ":$PATH:" in
-  *":$INSTALL_DIR:"*) ;;
+  *":$INSTALL_DIR:"*)
+    # Already on PATH (reinstall, or a shell that already sourced the rc edits).
+    echo
+    echo "refuse: ready — run  refuse --version   (then  refuse init  to get started)"
+    ;;
   *)
     for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
       patch_rc "$rc"
     done
 
+    # NOTE: a piped `curl | sh` runs in a child shell and cannot change the PATH
+    # of the terminal you're sitting in. New terminals pick it up from the rc
+    # edits above; for the current one, the export below is required. Make it
+    # the most prominent, last thing the user sees so it isn't skipped.
     echo
-    echo "refuse: for THIS shell, run —"
-    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
-    echo "(future shells pick it up automatically from the rc edits above)"
+    echo "refuse: installed. New terminals will find it automatically."
+    echo "        To use it in THIS terminal right now, run:"
     echo
+    echo "    export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo
+    echo "        Then:  refuse --version   (and  refuse init  to get started)"
     ;;
 esac
-
-echo "refuse: then try \`refuse --version\` and \`refuse init\`"
