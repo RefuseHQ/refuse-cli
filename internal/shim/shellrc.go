@@ -16,6 +16,20 @@ const (
 	endMarker   = "# <<< refuse shim (managed) <<<"
 )
 
+// markerPair is a begin/end delimiter set we recognise in shell-rc files.
+type markerPair struct{ begin, end string }
+
+// managedMarkers is every block refuse owns. The first is canonical (what we
+// write today); the rest are legacy delimiters from older installers that we
+// still strip so install consolidates duplicates and uninstall cleans up fully.
+// The curl|sh bootstrap (scripts/install.sh) historically wrote a
+// "refuse cli (managed)" block with a different marker than the binary, so an
+// uninstall used to leave it behind — this list fixes that.
+var managedMarkers = []markerPair{
+	{beginMarker, endMarker},
+	{"# >>> refuse cli (managed) >>>", "# <<< refuse cli (managed) <<<"},
+}
+
 // updateShellRC writes (`enable`=true) or removes (`enable`=false) the PATH
 // block in the user's shell-rc files. Returns the rc files actually touched.
 func updateShellRC(binDir string, enable bool) ([]string, error) {
@@ -75,6 +89,26 @@ func managedBlock(binDir string) string {
 	return b.String()
 }
 
+// stripBlock removes every begin..end block (inclusive, plus a trailing
+// newline) from content. Loops so duplicate blocks are all removed.
+func stripBlock(content, begin, end string) string {
+	for {
+		start := strings.Index(content, begin)
+		if start < 0 {
+			return content
+		}
+		rel := strings.Index(content[start:], end)
+		if rel < 0 {
+			return content // unterminated marker — leave it rather than eat the rest
+		}
+		stop := start + rel + len(end)
+		if stop < len(content) && content[stop] == '\n' {
+			stop++
+		}
+		content = content[:start] + content[stop:]
+	}
+}
+
 func patchFile(path, binDir string, enable bool) (bool, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -82,19 +116,13 @@ func patchFile(path, binDir string, enable bool) (bool, error) {
 	}
 	content := string(raw)
 
-	startIdx := strings.Index(content, beginMarker)
-	endIdx := strings.Index(content, endMarker)
-
-	var withoutBlock string
-	if startIdx >= 0 && endIdx > startIdx {
-		// Strip the existing managed block (and the trailing newline if any).
-		end := endIdx + len(endMarker)
-		if end < len(content) && content[end] == '\n' {
-			end++
-		}
-		withoutBlock = content[:startIdx] + content[end:]
-	} else {
-		withoutBlock = content
+	// Strip every managed block we recognise — canonical and legacy, and any
+	// duplicates of each — so install consolidates to one block and uninstall
+	// removes them all (including a stray "refuse cli (managed)" block from an
+	// older curl|sh install).
+	withoutBlock := content
+	for _, m := range managedMarkers {
+		withoutBlock = stripBlock(withoutBlock, m.begin, m.end)
 	}
 
 	var next string
