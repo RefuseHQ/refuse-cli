@@ -67,21 +67,29 @@ func Install(shims []string) (InstallResult, error) {
 		}
 		target := shimTargetPath(dir, name)
 
-		// Idempotency: if target already points at us, nothing to do.
-		if cur, err := os.Stat(target); err == nil {
-			if self, sErr := os.Stat(selfExe); sErr == nil && os.SameFile(cur, self) {
-				res.Skipped = append(res.Skipped, name+": already installed")
-				// Still try the legacy cleanup so a re-run after upgrade tidies stragglers.
-				if cleanupLegacyBareName(dir, name, selfExe) {
-					res.LegacyRemoved = append(res.LegacyRemoved, name)
+		// Detect anything already at target with Lstat, which (unlike os.Stat)
+		// does NOT follow the link — so a dangling/broken shim is seen too.
+		// os.Stat errors on a broken shim, which used to skip cleanup and make
+		// createShim fail with "file exists" on the next install.
+		if lfi, lerr := os.Lstat(target); lerr == nil {
+			// A symlink that still resolves to us? Idempotent — leave it.
+			if lfi.Mode()&os.ModeSymlink != 0 {
+				if cur, sErr := os.Stat(target); sErr == nil {
+					if self, e := os.Stat(selfExe); e == nil && os.SameFile(cur, self) {
+						res.Skipped = append(res.Skipped, name+": already installed")
+						// Still try the legacy cleanup so a re-run after upgrade tidies stragglers.
+						if cleanupLegacyBareName(dir, name, selfExe) {
+							res.LegacyRemoved = append(res.LegacyRemoved, name)
+						}
+						continue
+					}
 				}
-				continue
 			}
-			// Foreign file at our spot — remove it before relink.
-			_ = os.Remove(target)
+			// Foreign file, wrong target, or dangling shim — clear it before relinking.
+			if rmErr := os.Remove(target); rmErr != nil {
+				return res, fmt.Errorf("remove stale shim %s: %w", target, rmErr)
+			}
 		}
-		// Stale entry that isn't a file but isn't a known link either (e.g., broken symlink).
-		// os.Stat above fails for broken symlinks; nothing to do then.
 
 		if cleanupLegacyBareName(dir, name, selfExe) {
 			res.LegacyRemoved = append(res.LegacyRemoved, name)
@@ -123,7 +131,10 @@ func Uninstall() (InstallResult, error) {
 	}
 	for name := range KnownManagers {
 		target := shimTargetPath(dir, name)
-		info, err := os.Stat(target)
+
+		// Lstat so a dangling shim is detected too — os.Stat reports ENOENT for a
+		// broken link, which used to make us treat an existing shim as already gone.
+		lfi, err := os.Lstat(target)
 		if errors.Is(err, os.ErrNotExist) {
 			// Even if the canonical target is gone, a legacy bare-name shim may linger.
 			if cleanupLegacyBareName(dir, name, selfExe) {
@@ -135,7 +146,20 @@ func Uninstall() (InstallResult, error) {
 			res.Skipped = append(res.Skipped, name+": "+err.Error())
 			continue
 		}
-		if !os.SameFile(info, selfInfo) {
+		// Ours if it resolves to us, or if it's a symlink (valid OR dangling)
+		// pointing at the refuse binary in our own bin dir. Leave foreign files alone.
+		ours := false
+		if cur, sErr := os.Stat(target); sErr == nil {
+			ours = os.SameFile(cur, selfInfo)
+		} else if lfi.Mode()&os.ModeSymlink != 0 {
+			if dest, rlErr := os.Readlink(target); rlErr == nil {
+				if !filepath.IsAbs(dest) {
+					dest = filepath.Join(dir, dest)
+				}
+				ours = filepath.Dir(filepath.Clean(dest)) == dir
+			}
+		}
+		if !ours {
 			res.Skipped = append(res.Skipped, name+": not our shim")
 			continue
 		}
